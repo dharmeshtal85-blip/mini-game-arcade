@@ -3,124 +3,282 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fruit Slice Arcade</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Play free online mini games at Crazy Mini Games. Enjoy fun arcade games on your mobile and desktop.">
+<meta name="theme-color" content="#0b1020">
+<title>Crazy Mini Games - Play Free Online Games</title>
+
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#10152d;color:white;font-family:Arial;text-align:center}
-header{padding:15px}
-h1{color:#ffe45e;margin:10px}
-.info{display:flex;justify-content:space-around;font-size:19px;margin:15px}
-button{background:#ffcc35;border:0;padding:13px 25px;border-radius:12px;font-weight:bold;font-size:17px;margin:8px}
-canvas{display:block;width:100%;height:65vh;touch-action:none;background:linear-gradient(#172b50,#071329);border-radius:18px}
-#message{font-size:20px;padding:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+ background:#0b1020;color:white;
+ font-family:Arial,sans-serif;
+}
+header{
+ display:flex;justify-content:space-between;
+ align-items:center;padding:18px 6%;
+ background:#11182b;border-bottom:1px solid #26334d;
+ position:sticky;top:0;z-index:10;
+}
+.logo{font-size:21px;font-weight:900;color:#ffd447}
+.logo span{color:white}
+nav a{color:white;text-decoration:none;margin-left:17px;font-size:13px}
+.hero{
+ text-align:center;padding:65px 20px 55px;
+ background:radial-gradient(ellipse at center,#263a66,#0b1020 70%);
+}
+.tag{
+ display:inline-block;color:#ffd447;
+ border:1px solid #ffd447;border-radius:30px;
+ padding:8px 16px;font-size:12px;margin-bottom:22px;
+}
+.hero h1{font-size:clamp(35px,8vw,62px);font-weight:900}
+.hero h1 span{color:#ffd447}
+.hero p{color:#b8c2d6;line-height:1.7;margin:18px auto;max-width:500px}
+.btn{
+ display:inline-block;background:#ffd447;color:#111;
+ padding:15px 28px;border-radius:12px;
+ text-decoration:none;font-weight:bold;
+ border:0;cursor:pointer;font-size:15px;
+}
+.section{padding:45px 6%;max-width:1100px;margin:auto}
+.heading{font-size:27px;margin-bottom:8px}
+.sub{color:#9ba9c2;margin-bottom:25px;font-size:14px}
+.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}
+.card{
+ background:#151f36;border:1px solid #2a3855;
+ border-radius:17px;overflow:hidden;
+}
+.game-art{
+ height:165px;display:flex;align-items:center;
+ justify-content:center;font-size:75px;
+ background:linear-gradient(135deg,#253f70,#17223d);
+}
+.card-body{padding:19px}
+.card h3{margin-bottom:9px}
+.card p{font-size:13px;color:#aebbd1;line-height:1.6;margin-bottom:17px}
+.card .btn{width:100%}
+.game-area{display:none}
+.game-area.active{display:block}
+.game-box{
+ background:#111b32;border-radius:17px;
+ padding:20px;text-align:center;
+}
+.stats{display:flex;justify-content:space-around;margin:15px 0;font-size:18px}
+canvas{
+ display:block;width:100%;height:400px;
+ background:linear-gradient(#1b355c,#09152c);
+ border-radius:15px;touch-action:none;
+}
+.game-controls{margin:15px 0}
+.game-controls button{margin:5px}
+.info{
+ background:#151f36;border-radius:16px;
+ padding:25px;line-height:1.8;
+ border:1px solid #283653;
+}
+footer{
+ background:#11182b;text-align:center;
+ padding:35px 15px;color:#9ba9c2;font-size:13px;
+ line-height:2;
+}
+footer a{color:#ffd447;text-decoration:none;margin:0 8px}
+button:active,.btn:active{transform:scale(.97)}
+@media(max-width:500px){
+ nav a{margin-left:8px;font-size:11px}
+ header{padding:15px 4%}
+ .logo{font-size:17px}
+ canvas{height:350px}
+}
 </style>
 </head>
-<body>
-<header>
-<h1>🍉 FRUIT SLICE 🍊</h1>
-<div class="info">
-<span>Score: <b id="score">0</b></span>
-<span>Time: <b id="time">60</b></span>
-</div>
-<button id="start">START GAME</button>
-<button id="pause">PAUSE</button>
-<div id="message">Slice fruits with your finger!</div>
-</header>
-<canvas id="game"></canvas>
-<script>
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
-const scoreEl=document.getElementById("score");
-const timeEl=document.getElementById("time");
-const msg=document.getElementById("message");
 
+<body>
+
+<header>
+ <div class="logo">🎮 CRAZY <span>MINI GAMES</span></div>
+ <nav>
+  <a href="#home">Home</a>
+  <a href="#games">Games</a>
+  <a href="#about">About</a>
+ </nav>
+</header>
+
+<section class="hero" id="home">
+ <div class="tag">🎮 FREE ONLINE ARCADE GAMES</div>
+ <h1>PLAY. HAVE FUN.<br><span>GO CRAZY!</span></h1>
+ <p>Discover fun mini games, challenge your skills and enjoy exciting arcade moments. Play directly in your browser!</p>
+ <a class="btn" href="#games">EXPLORE GAMES →</a>
+</section>
+
+<section class="section" id="games">
+ <h2 class="heading">🔥 Our Games</h2>
+ <p class="sub">Choose a game and start playing!</p>
+
+ <div class="games">
+  <div class="card">
+   <div class="game-art">🍉🍊🍓</div>
+   <div class="card-body">
+    <h3>Fruit Slice Arcade</h3>
+    <p>Slice flying fruits, earn points and beat your high score!</p>
+    <button class="btn" onclick="openGame()">PLAY NOW →</button>
+   </div>
+  </div>
+ </div>
+</section>
+
+<section class="section game-area" id="play">
+ <div class="game-box">
+  <h2>🍉 Fruit Slice Arcade</h2>
+  <div class="stats">
+   <span>Score: <b id="score">0</b></span>
+   <span>Time: <b id="time">60</b></span>
+  </div>
+  <div class="game-controls">
+   <button class="btn" onclick="startGame()">START</button>
+   <button class="btn" onclick="pauseGame()">PAUSE</button>
+   <button class="btn" onclick="closeGame()">CLOSE</button>
+  </div>
+  <p id="message">Swipe over fruits to slice them!</p>
+  <canvas id="game"></canvas>
+ </div>
+</section>
+
+<section class="section">
+ <h2 class="heading">🎯 How To Play</h2>
+ <p class="sub">Simple controls, instant fun.</p>
+ <div class="info">
+  1. Select Fruit Slice Arcade.<br>
+  2. Press the START button.<br>
+  3. Swipe your finger across flying fruits.<br>
+  4. Earn 10 points for every fruit sliced.<br>
+  5. Try to get your highest score before time runs out!
+ </div>
+</section>
+
+<section class="section" id="about">
+ <h2 class="heading">About Crazy Mini Games</h2>
+ <p class="sub">Fun gaming, right in your browser.</p>
+ <div class="info">
+  Crazy Mini Games is an online mini-game arcade.
+  Our goal is to provide simple, entertaining and
+  mobile-friendly browser games that everyone can enjoy.
+ </div>
+</section>
+
+<footer>
+ <b>🎮 CRAZY MINI GAMES</b><br>
+ Play Free. Have Fun. Repeat.<br><br>
+ <a href="#home">Home</a>
+ <a href="#games">Games</a>
+ <a href="#about">About</a>
+ <br><br>
+ © 2026 Crazy Mini Games. All rights reserved.
+</footer>
+
+<script>
+const c=document.getElementById("game");
+const ctx=c.getContext("2d");
 let fruits=[],score=0,time=60,playing=false,paused=false;
-let last=0,spawn=0,frame=0,trail=[];
+let last=0,spawn=0,elapsed=0,raf=null;
+let trail=[],swiping=false;
 const emojis=["🍉","🍊","🍎","🍌","🍓","🍍","🥝"];
 
 function resize(){
- const r=canvas.getBoundingClientRect();
- canvas.width=r.width*devicePixelRatio;
- canvas.height=r.height*devicePixelRatio;
+ const r=c.getBoundingClientRect();
+ c.width=r.width*devicePixelRatio;
+ c.height=r.height*devicePixelRatio;
  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
 }
 window.addEventListener("resize",resize);
-resize();
 
-function start(){
- score=0;time=60;fruits=[];spawn=0;frame=0;
- playing=true;paused=false;
- scoreEl.textContent=score;timeEl.textContent=time;
- msg.textContent="Swipe across the fruits!";
+function openGame(){
+ document.getElementById("play").classList.add("active");
+ resize();
+ document.getElementById("play").scrollIntoView({behavior:"smooth"});
+}
+function closeGame(){
+ playing=false;paused=false;
+ cancelAnimationFrame(raf);
+ document.getElementById("play").classList.remove("active");
+ document.getElementById("games").scrollIntoView({behavior:"smooth"});
+}
+function startGame(){
+ cancelAnimationFrame(raf);
+ fruits=[];score=0;time=60;elapsed=0;spawn=0;
+ playing=true;paused=false;trail=[];
+ document.getElementById("score").textContent=0;
+ document.getElementById("time").textContent=60;
+ document.getElementById("message").textContent="Swipe across the fruits!";
  last=performance.now();
- requestAnimationFrame(loop);
+ raf=requestAnimationFrame(loop);
 }
-function finish(){
- playing=false;
- msg.textContent="GAME OVER! Final Score: "+score;
-}
-function pause(){
+function pauseGame(){
  if(!playing)return;
  paused=!paused;
- msg.textContent=paused?"PAUSED":"Keep slicing!";
- if(!paused){last=performance.now();requestAnimationFrame(loop);}
+ document.getElementById("message").textContent=paused?"PAUSED":"Keep slicing!";
+ if(!paused){last=performance.now();raf=requestAnimationFrame(loop)}
 }
 function loop(now){
  if(!playing||paused)return;
  let dt=Math.min((now-last)/1000,.05);
- last=now;
- frame+=dt;spawn+=dt;
- if(frame>=1){
- time=Math.max(0,60-Math.floor(frame));
- timeEl.textContent=time;
- if(time===0){finish();return;}
+ last=now;elapsed+=dt;spawn+=dt;
+ time=Math.max(0,60-Math.floor(elapsed));
+ document.getElementById("time").textContent=time;
+ if(time===0){
+ playing=false;
+ document.getElementById("message").textContent="GAME OVER! Final Score: "+score;
+ return;
  }
- if(spawn>.65){
+ const w=c.clientWidth,h=c.clientHeight;
+ if(spawn>.7){
  spawn=0;
- const w=canvas.clientWidth,h=canvas.clientHeight;
- fruits.push({x:35+Math.random()*(w-70),y:h+20,
- vx:(Math.random()-.5)*170,vy:-430-Math.random()*100,
- size:27,emoji:emojis[Math.floor(Math.random()*emojis.length)]});
+ fruits.push({
+ x:35+Math.random()*(w-70),y:h+25,
+ vx:(Math.random()-.5)*160,
+ vy:-420-Math.random()*120,
+ emoji:emojis[Math.floor(Math.random()*emojis.length)]
+ });
  }
- ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
- fruits=fruits.filter(f=>f.y<canvas.clientHeight+60);
+ ctx.clearRect(0,0,w,h);
+ fruits=fruits.filter(f=>f.y<h+60);
  for(const f of fruits){
- f.x+=f.vx*dt;f.y+=f.vy*dt;
- f.vy+=750*dt;
+ f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=750*dt;
  ctx.font="42px Arial";ctx.textAlign="center";
  ctx.fillText(f.emoji,f.x,f.y);
  }
- trail=trail.filter(p=>now-p.t<180);
- ctx.strokeStyle="#fff36a";ctx.lineWidth=5;
- ctx.lineCap="round";ctx.beginPath();
+ trail=trail.filter(p=>now-p.t<150);
+ ctx.beginPath();ctx.strokeStyle="#ffe65b";
+ ctx.lineWidth=5;ctx.lineCap="round";
  trail.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
  ctx.stroke();
- requestAnimationFrame(loop);
+ raf=requestAnimationFrame(loop);
 }
-let swiping=false;
-function position(e){
- const r=canvas.getBoundingClientRect();
+function pos(e){
+ const r=c.getBoundingClientRect();
  return {x:e.clientX-r.left,y:e.clientY-r.top};
 }
-canvas.addEventListener("pointerdown",e=>{
+c.addEventListener("pointerdown",e=>{
  if(!playing||paused)return;
- swiping=true;canvas.setPointerCapture(e.pointerId);
- trail=[{...position(e),t:performance.now()}];
+ swiping=true;c.setPointerCapture(e.pointerId);
+ trail=[{...pos(e),t:performance.now()}];
 });
-canvas.addEventListener("pointermove",e=>{
+c.addEventListener("pointermove",e=>{
  if(!swiping||!playing||paused)return;
- const p=position(e);p.t=performance.now();trail.push(p);
+ const p=pos(e);p.t=performance.now();trail.push(p);
  fruits=fruits.filter(f=>{
- const hit=Math.hypot(f.x-p.x,f.y-p.y)<f.size+22;
- if(hit){score+=10;scoreEl.textContent=score;}
+ const hit=Math.hypot(f.x-p.x,f.y-p.y)<48;
+ if(hit){
+ score+=10;
+ document.getElementById("score").textContent=score;
+ }
  return !hit;
  });
 });
-canvas.addEventListener("pointerup",()=>swiping=false);
-canvas.addEventListener("pointercancel",()=>swiping=false);
-document.getElementById("start").onclick=start;
-document.getElementById("pause").onclick=pause;
+c.addEventListener("pointerup",()=>swiping=false);
+c.addEventListener("pointercancel",()=>swiping=false);
+resize();
 </script>
+
 </body>
 </html>
