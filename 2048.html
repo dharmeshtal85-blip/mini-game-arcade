@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2048 Puzzle - Crazy Mini Games</title>
+<meta name="description" content="Play 2048 Puzzle online for free. Merge matching numbers, reach 2048 and beat your high score.">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#faf8ef;color:#776e65;font-family:Arial,sans-serif;text-align:center;padding:18px}
+h1{font-size:42px;margin:12px 0}
+p{line-height:1.5}
+.top{display:flex;justify-content:center;gap:12px;align-items:center;flex-wrap:wrap}
+.score{background:#bbada0;color:white;padding:10px 18px;border-radius:8px;font-weight:bold}
+button{border:0;border-radius:7px;background:#8f7a66;color:white;padding:12px 20px;font-size:16px;font-weight:bold;cursor:pointer}
+#board{width:min(92vw,420px);aspect-ratio:1;margin:22px auto;background:#bbada0;padding:10px;border-radius:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;touch-action:none}
+.cell{background:#cdc1b4;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:clamp(20px,7vw,34px);font-weight:bold}
+.v2{background:#eee4da}.v4{background:#ede0c8}.v8{background:#f2b179;color:white}.v16{background:#f59563;color:white}.v32{background:#f67c5f;color:white}.v64{background:#f65e3b;color:white}.v128,.v256,.v512{background:#edcf72;color:white;font-size:26px}.v1024,.v2048{background:#edc53f;color:white;font-size:22px}
+#message{font-weight:bold;min-height:24px}
+.instructions{max-width:520px;margin:30px auto;text-align:left;background:white;padding:18px;border-radius:10px;line-height:1.7}
+footer{margin:30px 0;font-size:14px}
+a{color:#776e65}
+</style>
+</head>
+<body>
+<h1>2048</h1>
+<p>Join the numbers and reach the 2048 tile!</p>
+<div class="top">
+<div class="score">Score: <span id="score">0</span></div>
+<div class="score">Best: <span id="best">0</span></div>
+<button onclick="restart()">New Game</button>
+</div>
+<div id="board"></div>
+<div id="message">Use arrow keys or swipe to play.</div>
+<section class="instructions">
+<h2>How to Play 2048</h2>
+<p>1. Swipe or use arrow keys to move all tiles.</p>
+<p>2. When two tiles with the same number touch, they merge into one.</p>
+<p>3. Every move adds a new tile.</p>
+<p>4. Reach the 2048 tile to win. Keep playing to beat your high score!</p>
+<h2>Game Tips</h2>
+<p>Keep your largest tile in a corner. Avoid moving in random directions and plan each move carefully.</p>
+</section>
+<footer>Part of <a href="index.html">Crazy Mini Games</a></footer>
+<script>
+let grid,score=0,best=Number(localStorage.getItem("2048best")||0),over=false,won=false;
+const board=document.getElementById("board");
+function restart(){grid=Array.from({length:4},()=>Array(4).fill(0));score=0;over=false;won=false;document.getElementById("message").textContent="Use arrow keys or swipe to play.";addTile();addTile();draw()}
+function addTile(){let empty=[];grid.forEach((r,y)=>r.forEach((v,x)=>{if(!v)empty.push([y,x])}));if(empty.length){let [y,x]=empty[Math.floor(Math.random()*empty.length)];grid[y][x]=Math.random()<.9?2:4}}
+function draw(){board.innerHTML="";grid.flat().forEach(v=>{let d=document.createElement("div");d.className="cell "+(v?"v"+v:"");d.textContent=v||"";board.appendChild(d)});document.getElementById("score").textContent=score;document.getElementById("best").textContent=best}
+function move(dir){if(over)return;let old=JSON.stringify(grid);for(let i=0;i<4;i++){let line=[];for(let j=0;j<4;j++){let y=dir==="up"?j:dir==="down"?3-j:i;let x=dir==="left"?j:dir==="right"?3-j:i;line.push(grid[y][x])}line=line.filter(v=>v);for(let j=0;j<line.length-1;j++){if(line[j]===line[j+1]){line[j]*=2;score+=line[j];line.splice(j+1,1);if(line[j]===2048&&!won){won=true;document.getElementById("message").textContent="You reached 2048! Keep playing!"}}}while(line.length<4)line.push(0);for(let j=0;j<4;j++){let y=dir==="up"?j:dir==="down"?3-j:i;let x=dir==="left"?j:dir==="right"?3-j:i;grid[y][x]=line[j]}}
+if(old!==JSON.stringify(grid)){addTile();if(score>best){best=score;localStorage.setItem("2048best",best)}draw();if(!canMove()){over=true;document.getElementById("message").textContent="Game Over! Tap New Game to try again."}}}
+function canMove(){for(let y=0;y<4;y++)for(let x=0;x<4;x++){if(!grid[y][x])return true;if(x<3&&grid[y][x]===grid[y][x+1])return true;if(y<3&&grid[y][x]===grid[y+1][x])return true}return false}
+document.addEventListener("keydown",e=>{let m={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right"};if(m[e.key]){e.preventDefault();move(m[e.key])}});
+let sx=0,sy=0;
+board.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+board.addEventListener("touchend",e=>{let dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<25)return;move(Math.abs(dx)>Math.abs(dy)?(dx>0?"right":"left"):(dy>0?"down":"up"))},{passive:true});
+restart();
+</script>
+</body>
+</html>
