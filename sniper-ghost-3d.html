@@ -1,0 +1,624 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Sniper Ghost 3D - Level Campaign</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05080d;font-family:Arial,sans-serif;touch-action:none}
+#game{position:fixed;inset:0}
+canvas{display:block}
+#hud{position:fixed;z-index:3;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:6px}
+.stat{background:#07111de8;color:#f2e9d8;border:1px solid #b68e4e;padding:9px 10px;font-size:11px;letter-spacing:1px;font-weight:bold;border-radius:4px}
+#mission{position:fixed;z-index:3;top:55px;left:10px;width:220px;max-width:65vw;background:#07111dec;color:#d2d9d8;border-left:3px solid #d3a24e;padding:10px;font-size:11px;line-height:1.5}
+#mission b{display:block;color:#f2d08a;font-size:12px;letter-spacing:1px}
+#progress{height:4px;background:#35434a;margin-top:7px}
+#bar{height:100%;width:0;background:#d8a64c}
+button{color:white;font-weight:bold;touch-action:none}
+#pause{position:fixed;z-index:4;right:10px;top:55px;background:#07111ded;border:1px solid #aa936d;border-radius:5px;padding:11px}
+#controls{position:fixed;z-index:4;left:12px;right:12px;bottom:16px;display:flex;align-items:end;justify-content:space-between;pointer-events:none}
+.group{display:flex;gap:8px;align-items:end;pointer-events:auto}
+.column{display:flex;flex-direction:column;gap:8px}
+.btn{border:1px solid #d0a34e;border-radius:9px;box-shadow:0 5px 15px #0008}
+#move{width:88px;height:88px;border-radius:50%;background:radial-gradient(circle,#d58a2b,#493019 65%,#10151b)}
+#scope{width:88px;height:55px;background:#176c87}
+#reload{width:88px;height:50px;background:#735315}
+#fire{width:100px;height:86px;background:#821d17;border-color:#cf5a47;font-size:18px}
+#scopeUI{display:none;position:fixed;z-index:2;inset:0;pointer-events:none;background:radial-gradient(circle at center,transparent 0,transparent 35%,#000 36%,#000 100%)}
+#scopeUI:before{content:"";position:absolute;width:min(76vw,65vh);height:min(76vw,65vh);left:50%;top:50%;transform:translate(-50%,-50%);border:5px solid #050505;border-radius:50%;box-shadow:0 0 0 999px #000}
+.crossV,.crossH{position:absolute;background:#050505;left:50%;top:50%;transform:translate(-50%,-50%)}
+.crossV{width:2px;height:min(76vw,65vh)}
+.crossH{height:2px;width:min(76vw,65vh)}
+#dot{position:absolute;left:50%;top:50%;width:7px;height:7px;background:#e53c29;border-radius:50%;transform:translate(-50%,-50%)}
+#toast{position:fixed;z-index:8;left:50%;top:47%;transform:translate(-50%,-50%);background:#07111df0;color:#f2d08a;padding:12px 18px;letter-spacing:2px;font-weight:bold;opacity:0;pointer-events:none;text-align:center;white-space:nowrap}
+#hint{position:fixed;z-index:3;left:50%;bottom:116px;transform:translateX(-50%);background:#07111dcc;color:#e6e8e3;padding:7px 10px;border-radius:4px;font-size:10px;white-space:nowrap}
+#screen{position:fixed;z-index:10;inset:0;background:#030912ef;display:flex;align-items:center;justify-content:center;padding:18px}
+.panel{width:min(420px,100%);background:linear-gradient(145deg,#1a303a,#081019);border:1px solid #bd9654;border-radius:13px;padding:23px;color:#e9e8df;text-align:center;max-height:90vh;overflow:auto}
+.panel h1{color:#f1d08e;letter-spacing:2px;font-size:25px;margin:8px 0}
+.panel p{font-size:14px;line-height:1.5;color:#c7d0d0}
+.primary{background:#c38b38;color:#17120a;border:0;border-radius:7px;padding:13px 24px;font-size:16px;margin-top:8px}
+.levels{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:15px 0}
+.level{background:#14242c;border:1px solid #8e784f;border-radius:7px;padding:12px 6px;color:#eee}
+.level.locked{opacity:.4}
+.small{font-size:11px;color:#aab8b9}
+</style>
+</head>
+<body>
+<div id="game"></div>
+
+<div id="hud">
+<div class="stat">LEVEL <span id="levelNum">1</span>/5</div>
+<div class="stat">KILLS <span id="kills">0</span>/<span id="total">6</span></div>
+<div class="stat">AMMO <span id="ammo">5</span>/5</div>
+</div>
+
+<div id="mission">
+<b id="missionTitle">LEVEL 1 · MOUNTAIN OUTPOST</b>
+<span id="missionText">Eliminate all guards.</span>
+<div id="progress"><div id="bar"></div></div>
+</div>
+
+<button id="pause">Ⅱ PAUSE</button>
+
+<div id="scopeUI">
+<div class="crossV"></div>
+<div class="crossH"></div>
+<div id="dot"></div>
+</div>
+
+<div id="hint">DRAG SCREEN TO AIM · TAP FIRE TO SHOOT</div>
+
+<div id="controls">
+<div class="group">
+<button class="btn" id="move">MOVE<br>◉</button>
+</div>
+<div class="group">
+<div class="column">
+<button class="btn" id="scope">4× SCOPE</button>
+<button class="btn" id="reload">↻ RELOAD</button>
+</div>
+<button class="btn" id="fire">FIRE</button>
+</div>
+</div>
+
+<div id="toast"></div>
+
+<div id="screen">
+<div class="panel" id="panel">
+<h1>SNIPER GHOST 3D</h1>
+<p>5-LEVEL SNIPER CAMPAIGN</p>
+<p>Start from a high mountain ridge. Find moving guards in each enemy outpost, aim carefully and clear every level.</p>
+<div class="levels" id="levelGrid"></div>
+<button class="primary" id="start">▶ START LEVEL 1</button>
+<p class="small">Each level unlocks after the previous mission is completed.</p>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+
+if(!window.THREE){
+$('panel').innerHTML='<h1>3D ENGINE FAILED</h1><p>Internet is required to load the 3D engine. Reload when online.</p>';
+return;
+}
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x9bc9e8);
+scene.fog=new THREE.Fog(0x9bc9e8,125,285);
+
+const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,600);
+camera.position.set(0,15,34);
+camera.lookAt(0,5,-110);
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.18;
+$('game').appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xe7f5ff,0x59633f,2));
+
+const sun=new THREE.DirectionalLight(0xffe5bd,2.4);
+sun.position.set(-45,90,45);
+sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-150;
+sun.shadow.camera.right=150;
+sun.shadow.camera.top=150;
+sun.shadow.camera.bottom=-150;
+scene.add(sun);
+
+const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.9});
+
+function box(p,x,y,z,w,h,d,c){
+const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c));
+o.position.set(x,y,z);
+o.castShadow=true;
+o.receiveShadow=true;
+p.add(o);
+return o;
+}
+
+function cone(p,x,y,z,r,h,c,n=5){
+const o=new THREE.Mesh(new THREE.ConeGeometry(r,h,n),mat(c));
+o.position.set(x,y,z);
+o.castShadow=true;
+p.add(o);
+return o;
+}
+
+function ball(p,x,y,z,r,c){
+const o=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),mat(c));
+o.position.set(x,y,z);
+p.add(o);
+return o;
+}
+
+box(scene,0,-2,-90,340,3,380,0x72a846);
+
+// Distant mountain skyline: central shooting corridor is clear.
+const mountainSpots=[
+[-112,-205,46],
+[-88,-235,58],
+[-62,-225,42],
+[62,-225,44],
+[88,-238,60],
+[114,-205,48],
+[-130,-275,55],
+[-95,-292,64],
+[95,-292,64],
+[130,-275,55]
+];
+
+for(const spot of mountainSpots){
+const [x,z,h]=spot;
+cone(scene,x,h/2-2,z,23,h,0x718d8b,5);
+cone(scene,x,h*.84,z,9,h*.25,0xd5e1df,5);
+}
+
+function tree(x,z,s=1){
+box(scene,x,s,z,.45*s,2*s,.45*s,0x5a3b21);
+box(scene,x,2.4*s,z,2.5*s,2.2*s,2.5*s,0x176e2b);
+box(scene,x-.5*s,3*s,z-.2*s,1.7*s,1.4*s,1.7*s,0x26852d);
+}
+
+for(let i=0;i<150;i++){
+let x=(Math.random()-.5)*160;
+let z=-40-Math.random()*150;
+if(Math.abs(x)>14)tree(x,z,.55+Math.random()*.8);
+}
+
+// High sniper ledge and rifle rest.
+box(scene,0,3,27,22,3,18,0x65675c);
+box(scene,0,4.7,20,22,.5,2,0x343b3c);
+
+const rifle=new THREE.Group();
+camera.add(rifle);
+rifle.position.set(.56,-.48,-1.05);
+
+box(rifle,0,0,0,.28,.28,1.4,0x171e25);
+box(rifle,0,.02,-.85,.12,.12,1.3,0x303a40);
+box(rifle,0,-.23,.25,.3,.5,.35,0x4a3827);
+box(rifle,0,.19,-.15,.34,.14,.42,0x252d33);
+
+const tube=new THREE.Mesh(
+new THREE.CylinderGeometry(.13,.13,.42,12),
+mat(0x10171c)
+);
+tube.rotation.x=Math.PI/2;
+tube.position.set(0,.22,-.25);
+rifle.add(tube);
+
+const levels=[
+{
+name:'MOUNTAIN OUTPOST',
+desc:'Eliminate 6 patrol guards at the valley base.',
+count:6,range:3,speed:1,ammo:5,
+sky:0x9bc9e8,house:0xa5a99b,roof:0xe45c4a
+},
+{
+name:'RIVER FORTRESS',
+desc:'Clear 8 guards protecting the river crossing.',
+count:8,range:4,speed:1.25,ammo:5,
+sky:0x91b9d4,house:0x999b8c,roof:0xb84b3e
+},
+{
+name:'FOREST CHECKPOINT',
+desc:'Find 10 guards hidden around the forest camp.',
+count:10,range:5,speed:1.5,ammo:6,
+sky:0x8fb6c7,house:0x8e9b8b,roof:0xc65b43
+},
+{
+name:'DESERT COMMAND',
+desc:'Eliminate 12 guards around the command compound.',
+count:12,range:5.8,speed:1.8,ammo:6,
+sky:0xd4b98d,house:0xb3a183,roof:0x9f5038
+},
+{
+name:'FINAL ENEMY BASE',
+desc:'Final assault. Take down all 14 moving guards.',
+count:14,range:6.5,speed:2.1,ammo:7,
+sky:0x829eb6,house:0x858b8a,roof:0x9e3836
+}
+];
+
+let unlocked=1;
+let current=0;
+let guards=[];
+let ammo=5;
+let kills=0;
+let score=0;
+let playing=false;
+let paused=false;
+let scoped=false;
+let drag=false;
+let lastX=0;
+let lastY=0;
+let moving=false;
+
+function clearGroup(){
+guards.forEach(g=>scene.remove(g.group));
+guards=[];
+}
+
+function buildBase(level){
+scene.background.setHex(level.sky);
+scene.fog.color.setHex(level.sky);
+
+box(scene,0,-.3,-100,175,.25,5,0x24bde0);
+box(scene,0,-.12,-100,175,.12,5,0x83e3ed);
+box(scene,0,.12,-100,13,.5,5,0x76502e);
+
+for(let x=-6;x<=6;x+=2){
+box(scene,x,.45,-100,.16,.55,5.5,0x4b321d);
+}
+
+function house(x,z,w){
+box(scene,x,2,z,w,4,w*.7,level.house);
+cone(scene,x,5.3,z,w*.72,2.5,level.roof,4);
+box(scene,x,1,z+w*.36,1.2,2,.12,0x48301e);
+
+for(let dx of [-w*.25,w*.25]){
+box(scene,x+dx,2.4,z+w*.36,1,.8,.15,0x263c48);
+}
+}
+
+house(0,-130,12);
+house(-18,-134,8);
+house(18,-134,8);
+
+function tower(x,z){
+for(let dx of [-1.8,1.8]){
+for(let dz of [-1.8,1.8]){
+box(scene,x+dx,3,z+dz,.25,6,.25,0x55391f);
+}
+}
+box(scene,x,6,z,5,1,5,0x795331);
+cone(scene,x,7,z,3.2,1.7,level.roof,4);
+}
+
+tower(-36,-127);
+tower(36,-127);
+tower(-27,-148);
+tower(27,-148);
+
+for(let x=-34;x<=34;x+=3){
+box(scene,x,.7,-115,.15,1.4,.15,0x53391f);
+box(scene,x,.7,-145,.15,1.4,.15,0x53391f);
+}
+
+box(scene,0,1,-115,69,.13,.13,0x674522);
+box(scene,0,1,-145,69,.13,.13,0x674522);
+
+const count=level.count;
+
+for(let i=0;i<count;i++){
+let g=new THREE.Group();
+scene.add(g);
+
+let lane=(i%4)-1.5;
+let x=lane*10+(Math.random()-.5)*3;
+let z=-115-Math.floor(i/4)*12-(i%3)*2;
+
+g.position.set(x,0,z);
+
+box(g,0,1.25,0,.7,1.1,.4,i%2?0x354a38:0x4a4939);
+ball(g,0,2,.02,.27,0xb98e6c);
+box(g,0,2.24,0,.58,.18,.48,0x25372c);
+
+let legs=[];
+let arms=[];
+
+for(let side of [-1,1]){
+let l=new THREE.Group();
+l.position.set(side*.19,.85,0);
+g.add(l);
+box(l,0,-.37,0,.23,.74,.26,0x343b31);
+legs.push(l);
+
+let a=new THREE.Group();
+a.position.set(side*.4,1.55,0);
+g.add(a);
+box(a,0,-.27,0,.2,.58,.2,0x3e4d3a);
+arms.push(a);
+}
+
+guards.push({
+group:g,x,z,legs,arms,
+phase:i*1.4,
+speed:level.speed*(.7+(i%4)*.15),
+range:level.range,
+alive:true
+});
+}
+}
+
+function renderLevels(){
+let grid=$('levelGrid');
+grid.innerHTML='';
+
+levels.forEach((l,i)=>{
+let b=document.createElement('button');
+b.className='level'+(i>=unlocked?' locked':'');
+b.innerHTML='LEVEL '+(i+1)+'<br><span class="small">'+(i<unlocked?'UNLOCKED':'LOCKED')+'</span>';
+b.disabled=i>=unlocked;
+
+b.onclick=()=>{
+current=i;
+$('start').textContent='▶ START LEVEL '+(i+1);
+document.querySelectorAll('.level').forEach((x,j)=>{
+x.style.borderColor=j===i?'#f0c36c':'#8e784f';
+});
+};
+
+grid.appendChild(b);
+});
+}
+
+function hud(){
+$('levelNum').textContent=current+1;
+$('kills').textContent=kills;
+$('total').textContent=levels[current].count;
+$('ammo').textContent=ammo;
+$('missionTitle').textContent='LEVEL '+(current+1)+' · '+levels[current].name;
+$('missionText').textContent=levels[current].desc;
+$('bar').style.width=(kills/levels[current].count*100)+'%';
+}
+
+function toast(t){
+$('toast').textContent=t;
+$('toast').style.opacity=1;
+clearTimeout(toast.timer);
+toast.timer=setTimeout(()=>$('toast').style.opacity=0,1100);
+}
+
+function beginLevel(){
+clearGroup();
+const l=levels[current];
+kills=0;
+ammo=l.ammo;
+paused=false;
+playing=true;
+scoped=false;
+
+camera.fov=58;
+camera.position.set(0,15,34);
+camera.rotation.set(0,0,0);
+camera.lookAt(0,5,-110);
+
+rifle.visible=true;
+$('scopeUI').style.display='none';
+$('scope').textContent='4× SCOPE';
+$('pause').textContent='Ⅱ PAUSE';
+
+buildBase(l);
+hud();
+$('screen').style.display='none';
+toast('LEVEL '+(current+1)+' START');
+}
+
+function completeLevel(){
+playing=false;
+unlocked=Math.max(unlocked,Math.min(5,current+2));
+renderLevels();
+
+$('screen').style.display='flex';
+
+$('panel').innerHTML=
+'<h1>LEVEL '+(current+1)+' COMPLETE</h1>'+
+'<p>'+levels[current].name+'</p>'+
+'<p>GUARDS ELIMINATED: '+kills+'/'+levels[current].count+'</p>'+
+'<p>TOTAL SCORE: '+score+'</p>'+
+(current<4?
+'<button class="primary" id="next">UNLOCKED · NEXT LEVEL ▶</button>':
+'<h2>CAMPAIGN COMPLETE</h2><button class="primary" id="next">PLAY AGAIN</button>')+
+'<p class="small">Choose any unlocked level from the campaign.</p>'+
+'<div class="levels" id="levelGrid"></div>';
+
+if($('next')){
+$('next').onclick=()=>{
+current=current===4?0:current+1;
+beginLevel();
+};
+}
+
+renderLevels();
+}
+
+function shoot(){
+if(!playing||paused)return;
+
+if(ammo<=0){
+toast('RELOAD YOUR RIFLE');
+return;
+}
+
+ammo--;
+hud();
+
+const ray=new THREE.Raycaster();
+ray.setFromCamera(new THREE.Vector2(0,0),camera);
+
+let hits=[];
+
+guards.filter(g=>g.alive).forEach(g=>{
+let center=g.group.position.clone();
+center.y=1.35;
+
+let point=ray.ray.intersectSphere(
+new THREE.Sphere(center,1.15),
+new THREE.Vector3()
+);
+
+if(point){
+hits.push({
+g,point,
+d:camera.position.distanceTo(point)
+});
+}
+});
+
+hits.sort((a,b)=>a.d-b.d);
+
+if(!hits.length){
+toast('SHOT MISSED');
+return;
+}
+
+let h=hits[0];
+h.g.alive=false;
+scene.remove(h.g.group);
+
+kills++;
+score+=150;
+hud();
+toast('TARGET ELIMINATED');
+
+if(kills===levels[current].count){
+setTimeout(completeLevel,800);
+}
+}
+
+$('start').onclick=beginLevel;
+
+$('fire').addEventListener('pointerdown',e=>{
+e.preventDefault();
+shoot();
+});
+
+$('reload').onclick=()=>{
+if(playing&&!paused){
+ammo=levels[current].ammo;
+hud();
+toast('RIFLE RELOADED');
+}
+};
+
+$('scope').onclick=()=>{
+if(!playing)return;
+
+scoped=!scoped;
+camera.fov=scoped?16:58;
+camera.updateProjectionMatrix();
+
+$('scopeUI').style.display=scoped?'block':'none';
+rifle.visible=!scoped;
+$('scope').textContent=scoped?'EXIT SCOPE':'4× SCOPE';
+};
+
+$('pause').onclick=()=>{
+if(!playing)return;
+
+paused=!paused;
+$('pause').textContent=paused?'▶ RESUME':'Ⅱ PAUSE';
+toast(paused?'MISSION PAUSED':'MISSION RESUMED');
+};
+
+renderer.domElement.addEventListener('pointerdown',e=>{
+drag=true;
+lastX=e.clientX;
+lastY=e.clientY;
+});
+
+renderer.domElement.addEventListener('pointermove',e=>{
+if(!drag||!playing||paused)return;
+
+let dx=e.clientX-lastX;
+let dy=e.clientY-lastY;
+lastX=e.clientX;
+lastY=e.clientY;
+
+camera.rotation.order='YXZ';
+camera.rotation.y-=dx*.002;
+camera.rotation.x=THREE.MathUtils.clamp(
+camera.rotation.x-dy*.0017,
+-.28,.24
+);
+});
+
+addEventListener('pointerup',()=>drag=false);
+
+$('move').addEventListener('pointerdown',e=>{
+e.preventDefault();
+moving=true;
+});
+
+$('move').addEventListener('pointerup',()=>moving=false);
+$('move').addEventListener('pointerleave',()=>moving=false);
+
+let prev=performance.now();
+
+function animate(t){
+requestAnimationFrame(animate);
+let dt=Math.min((t-prev)/1000,.04);
+prev=t;
+
+if(playing&&!paused){
+guards.forEach(o=>{
+if(!o.alive)return;
+
+let p=t/1000*o.speed+o.phase;
+
+o.group.position.x=o.x+Math.sin(p)*o.range;
+o.group.position.z=o.z+Math.sin(p*.5)*.7;
+
+let step=Math.sin(p*4)*.55;
+o.legs[0].rotation.x=step;
+o.legs[1].rotation.x=-step;
+o.arms[0].rotation.x=-step*.4;
+o.arms[1].rotation.x=step*.4;
+});
+
+if(moving){
+camera.position.x+=Math.sin(camera.rotation.y)*dt*2;
+camera.position.z+=Math.cos(camera.rotation.y)*dt*2;
+
+camera.position.x=THREE.MathUtils.clamp(camera.position.x,-12,12);
+camera.position.z=THREE.MathUtils.clamp(camera.position.z,27,40);
+}
+}
+
+renderer.render(scene,camera);
+}
+
+requestAnimationFrame(animate);
+
+addEventListener('resize',()=>{
+camera.aspect=innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(innerWidth,innerHeight);
+});
+
+renderLevels();
+})();
+</script>
+</body>
+</html>
