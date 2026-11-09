@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://fruit-slice-arcade-amber.vercel.app/sitemap.xml
