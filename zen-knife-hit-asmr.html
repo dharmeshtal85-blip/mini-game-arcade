@@ -1,0 +1,1997 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Zen Knife Hit ASMR - Satisfying Blade & Fruit Slice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #3d1c0c;
+      font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Top HUD Overlay */
+    #hud {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: max(14px, env(safe-area-inset-top)) 18px 10px;
+      pointer-events: none;
+    }
+
+    .hud-circle-btn {
+      pointer-events: auto;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 3.5px solid #ffd57e;
+      background: radial-gradient(circle at 35% 30%, #ffad42 0%, #d86d14 75%, #9e4708 100%);
+      box-shadow:
+        0 6px 12px rgba(0, 0, 0, 0.48),
+        inset 0 3px 5px rgba(255, 255, 255, 0.55),
+        inset 0 -4px 6px rgba(105, 42, 4, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #fff8eb;
+      transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .hud-circle-btn:active {
+      transform: scale(0.9);
+    }
+
+    .hud-circle-btn svg {
+      width: 26px;
+      height: 26px;
+      filter: drop-shadow(0 2px 2px rgba(85, 30, 4, 0.55));
+    }
+
+    /* Center Level & Stage Progress Dots */
+    #hud-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    #level-label {
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+      text-shadow: 0 3px 6px rgba(24, 9, 2, 0.75);
+      line-height: 1;
+    }
+
+    #boss-subtitle {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffd670;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+      height: 15px;
+    }
+
+    #stage-dots {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .stage-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.32);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+      transition: all 0.25s ease;
+    }
+
+    .stage-dot.completed, .stage-dot.active {
+      background: #ffae2b;
+      border-color: #fff2b2;
+      box-shadow: 0 0 10px rgba(255, 185, 56, 0.85);
+      transform: scale(1.12);
+    }
+
+    .boss-icon-dot {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.45;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+      transition: all 0.25s ease;
+    }
+
+    .boss-icon-dot.active, .boss-icon-dot.completed {
+      opacity: 1;
+      transform: scale(1.18);
+      filter: drop-shadow(0 0 8px rgba(255, 200, 65, 0.9));
+    }
+
+    /* Fruit Score Pill (Top-Right under Settings or Left) */
+    #fruit-badge {
+      position: fixed;
+      top: max(74px, calc(env(safe-area-inset-top) + 60px));
+      right: 18px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(36, 15, 5, 0.72);
+      border: 1.5px solid rgba(255, 207, 117, 0.45);
+      color: #ffe39e;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+    }
+
+    /* Pattern Name Pill (Subtle Relaxing Cue) */
+    #pattern-pill {
+      position: fixed;
+      top: max(74px, calc(env(safe-area-inset-top) + 60px));
+      left: 18px;
+      z-index: 20;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(36, 15, 5, 0.65);
+      border: 1.5px solid rgba(255, 207, 117, 0.3);
+      color: #f5d393;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: none;
+    }
+
+    /* Overlays & Modals */
+    .overlay-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(18, 7, 2, 0.76);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .overlay-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Boss Reward / Unlock Celebration Card */
+    .reward-card {
+      width: 100%;
+      max-width: 380px;
+      border-radius: 30px;
+      background: radial-gradient(circle at 50% 35%, #8c4820 0%, #4a210b 100%);
+      border: 4px solid #ffd479;
+      box-shadow: 0 24px 50px rgba(0, 0, 0, 0.7), inset 0 2px 8px rgba(255, 232, 175, 0.4);
+      padding: 26px 22px;
+      text-align: center;
+      color: #fff6e0;
+      transform: scale(0.88);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .overlay-backdrop.open .reward-card {
+      transform: scale(1);
+    }
+
+    .reward-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: #ffd875;
+      margin: 0 0 4px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+    }
+
+    .reward-sub {
+      font-size: 14px;
+      color: #f5d69c;
+      margin: 0 0 16px;
+    }
+
+    #reward-knife-canvas {
+      display: block;
+      margin: 0 auto 18px;
+      border-radius: 22px;
+      background: radial-gradient(circle, rgba(255, 214, 102, 0.28) 0%, rgba(42, 16, 4, 0.4) 75%);
+      border: 2px solid rgba(255, 214, 117, 0.35);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .game-btn {
+      flex: 1;
+      padding: 13px 18px;
+      border-radius: 16px;
+      border: 3px solid #ffe08c;
+      font-family: inherit;
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+      cursor: pointer;
+      text-shadow: 0 2px 3px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45), inset 0 2px 4px rgba(255, 255, 255, 0.45);
+      transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .game-btn:active {
+      transform: scale(0.93);
+    }
+
+    .btn-orange {
+      background: linear-gradient(180deg, #ffae38 0%, #d96b0b 100%);
+    }
+
+    .btn-green {
+      background: linear-gradient(180deg, #4cd957 0%, #24962e 100%);
+      border-color: #a6ffad;
+    }
+
+    /* Armory & Settings Modal Card */
+    .modal-card {
+      width: 100%;
+      max-width: 410px;
+      max-height: 84vh;
+      overflow-y: auto;
+      border-radius: 28px;
+      background: linear-gradient(180deg, #743b1d 0%, #471f0b 100%);
+      border: 3.5px solid #ffcf75;
+      box-shadow: 0 22px 45px rgba(0, 0, 0, 0.65);
+      padding: 20px;
+      color: #fff5e0;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #ffd989;
+    }
+
+    .close-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid #ffd57e;
+      background: #c75b0e;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .knives-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .knife-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 6px;
+      border-radius: 18px;
+      background: rgba(32, 13, 4, 0.55);
+      border: 2px solid rgba(255, 207, 117, 0.25);
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .knife-slot.equipped {
+      border-color: #63f574;
+      background: rgba(76, 217, 87, 0.18);
+    }
+
+    .knife-slot.locked {
+      opacity: 0.55;
+    }
+
+    .knife-slot-name {
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 15px;
+      margin-bottom: 10px;
+      border-radius: 18px;
+      background: rgba(34, 14, 4, 0.52);
+      border: 1.5px solid rgba(255, 207, 117, 0.25);
+    }
+
+    .setting-title {
+      font-size: 15px;
+      font-weight: 600;
+      display: block;
+    }
+
+    .setting-desc {
+      font-size: 12px;
+      color: #e2be87;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 52px;
+      height: 28px;
+      border-radius: 999px;
+      background: #2f1406;
+      border: 2px solid #9e6738;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch.on {
+      background: #3eb857;
+      border-color: #9ff5ae;
+    }
+
+    .toggle-knob {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .toggle-switch.on .toggle-knob {
+      transform: translateX(24px);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <!-- Top HUD -->
+  <header id="hud">
+    <button id="btn-armory" class="hud-circle-btn" aria-label="Knife Armory & Levels">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 3.172L2.293 12.879a1 1 0 001.414 1.414L5 13.001V20a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-6.999l1.293 1.292a1 1 0 001.414-1.414L12 3.172z"/>
+      </svg>
+    </button>
+
+    <div id="hud-center">
+      <div id="level-label">Level 1</div>
+      <div id="stage-dots">
+        <span class="stage-dot active" data-stage="0"></span>
+        <span class="stage-dot" data-stage="1"></span>
+        <span class="stage-dot" data-stage="2"></span>
+        <span class="boss-icon-dot" data-stage="3" title="Boss Stage">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M14.5 17.5L3 6V3h3l11.5 11.5" stroke="#ffd24c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M13 19l6-6M16 16l4 4M19 21l2-2" stroke="#ff9f1c" stroke-width="2.4" stroke-linecap="round"/>
+            <path d="M9.5 17.5L21 6V3h-3L6.5 14.5" stroke="#ffe885" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M11 19l-6-6M8 16l-4 4M5 21l-2-2" stroke="#ff9f1c" stroke-width="2.4" stroke-linecap="round"/>
+          </svg>
+        </span>
+      </div>
+      <div id="boss-subtitle"></div>
+    </div>
+
+    <button id="btn-settings" class="hud-circle-btn" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+      </svg>
+    </button>
+  </header>
+
+  <div id="pattern-pill">Zen Spin</div>
+  <div id="fruit-badge">🍎 <span id="fruit-count">0</span></div>
+
+  <!-- Boss Complete / New Knife Unlock Overlay -->
+  <div id="reward-overlay" class="overlay-backdrop">
+    <div class="reward-card">
+      <h2 id="reward-heading" class="reward-title">Boss Defeated!</h2>
+      <p id="reward-desc" class="reward-sub">New Blade Unlocked: Royal Gold Dagger</p>
+      <canvas id="reward-knife-canvas" width="170" height="170"></canvas>
+      <div class="btn-row">
+        <button id="btn-reward-next" class="game-btn btn-orange">Next</button>
+        <button id="btn-reward-equip" class="game-btn btn-green">Equip & Play</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Classic Arcade Fail / Revive Overlay (Only if Zen Relax Mode is OFF) -->
+  <div id="fail-overlay" class="overlay-backdrop">
+    <div class="reward-card">
+      <h2 class="reward-title">Blades Clashed!</h2>
+      <p class="reward-sub">Take a breath and try the rhythm again</p>
+      <div class="btn-row" style="margin-top: 18px;">
+        <button id="btn-fail-replay" class="game-btn btn-orange">Replay</button>
+        <button id="btn-fail-continue" class="game-btn btn-green">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Knife Armory & Level Selector Modal -->
+  <div id="armory-modal" class="overlay-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Knife Armory</h2>
+        <button class="close-btn" data-close="armory-modal">&times;</button>
+      </div>
+      <p style="font-size: 13px; color: #edd09a; margin-top: 0;">Defeat Level Bosses or collect 15 Fruits to unlock new blades!</p>
+      <div id="knives-grid" class="knives-grid"></div>
+    </div>
+  </div>
+
+  <!-- Relax & ASMR Settings Modal -->
+  <div id="settings-modal" class="overlay-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Relax & ASMR Settings</h2>
+        <button class="close-btn" data-close="settings-modal">&times;</button>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <span class="setting-title">Zen Relax Mode</span>
+          <span class="setting-desc">Gentle bounce on blade clash (no harsh game over)</span>
+        </div>
+        <div id="toggle-zen" class="toggle-switch on"><div class="toggle-knob"></div></div>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <span class="setting-title">ASMR Sound Effects</span>
+          <span class="setting-desc">Wood thwack, fruit slice & shatter acoustics</span>
+        </div>
+        <div id="toggle-sound" class="toggle-switch on"><div class="toggle-knob"></div></div>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <span class="setting-title">Haptic Vibration</span>
+          <span class="setting-desc">Tactile pulse on every blade hit</span>
+        </div>
+        <div id="toggle-haptics" class="toggle-switch on"><div class="toggle-knob"></div></div>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <span class="setting-title">Calm Ambient Pad</span>
+          <span class="setting-desc">Soothing background harmonic drone</span>
+        </div>
+        <div id="toggle-ambient" class="toggle-switch"><div class="toggle-knob"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * =========================================================================
+     * 1. PROCEDURAL ASMR WEB AUDIO ENGINE (WOOD THWACK, FRUIT SLICE, SHATTER)
+     * =========================================================================
+     */
+    class ZenKnifeAudio {
+      constructor() {
+        this.ctx = null;
+        this.soundEnabled = true;
+        this.ambientEnabled = false;
+        this.ambientNodes = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playThrow() {
+        if (!this.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(160, now + 0.07);
+
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      }
+
+      playHit(isJuicyBoss = false) {
+        if (!this.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const jitter = 0.94 + Math.random() * 0.14;
+
+        // Deep woody or juicy thud
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = isJuicyBoss ? 'triangle' : 'sine';
+        const startF = (isJuicyBoss ? 240 : 195) * jitter;
+        osc.frequency.setValueAtTime(startF, now);
+        osc.frequency.exponentialRampToValueAtTime(58, now + 0.09);
+
+        gain.gain.setValueAtTime(0.55, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
+
+        // Crisp blade embed transient
+        const bufLen = Math.floor(this.ctx.sampleRate * 0.04);
+        const buf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
+        const ch = buf.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) {
+          ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufLen * 0.25));
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buf;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime((isJuicyBoss ? 1850 : 1150) * jitter, now);
+        filter.Q.setValueAtTime(1.8, now);
+
+        const nGain = this.ctx.createGain();
+        nGain.gain.setValueAtTime(0.38, now);
+        nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+        noise.connect(filter);
+        filter.connect(nGain);
+        nGain.connect(this.ctx.destination);
+        noise.start(now);
+      }
+
+      playFruitSlice() {
+        if (!this.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        // High crisp slice "shhhk" + bright chime
+        const bufLen = Math.floor(this.ctx.sampleRate * 0.09);
+        const buf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
+        const ch = buf.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) {
+          ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufLen * 0.35));
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buf;
+
+        const hp = this.ctx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.setValueAtTime(2400, now);
+
+        const nGain = this.ctx.createGain();
+        nGain.gain.setValueAtTime(0.35, now);
+        nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+        noise.connect(hp);
+        hp.connect(nGain);
+        nGain.connect(this.ctx.destination);
+        noise.start(now);
+
+        // Sweet harmonic ping
+        const ping = this.ctx.createOscillator();
+        const pGain = this.ctx.createGain();
+        ping.type = 'sine';
+      ping.frequency.setValueAtTime(987.77, now); // B5
+        ping.frequency.exponentialRampToValueAtTime(1318.51, now + 0.14); // E6
+        pGain.gain.setValueAtTime(0.18, now);
+        pGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        ping.connect(pGain);
+        pGain.connect(this.ctx.destination);
+        ping.start(now);
+        ping.stop(now + 0.19);
+      }
+
+      playShatter(isBoss = false) {
+        if (!this.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        // Low resonant crack boom
+        const boom = this.ctx.createOscillator();
+        const bGain = this.ctx.createGain();
+        boom.type = 'triangle';
+        boom.frequency.setValueAtTime(140, now);
+        boom.frequency.exponentialRampToValueAtTime(36, now + 0.28);
+        bGain.gain.setValueAtTime(0.65, now);
+        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        boom.connect(bGain);
+        bGain.connect(this.ctx.destination);
+        boom.start(now);
+        boom.stop(now + 0.32);
+
+        // Shattering wood/fruit burst noise
+        const bufLen = Math.floor(this.ctx.sampleRate * 0.24);
+        const buf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
+        const ch = buf.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) {
+          ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufLen * 0.3));
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buf;
+
+        const bp = this.ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.setValueAtTime(820, now);
+        bp.Q.setValueAtTime(1.1, now);
+
+        const nGain = this.ctx.createGain();
+        nGain.gain.setValueAtTime(0.5, now);
+        nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+
+        noise.connect(bp);
+        bp.connect(nGain);
+        nGain.connect(this.ctx.destination);
+        noise.start(now);
+
+        if (isBoss) {
+          const notes = [523.25, 659.25, 783.99, 1046.5];
+          notes.forEach((f, idx) => {
+            const osc = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(f, now + idx * 0.07);
+            g.gain.setValueAtTime(0.18, now + idx * 0.07);
+            g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.65);
+            osc.connect(g);
+            g.connect(this.ctx.destination);
+            osc.start(now + idx * 0.07);
+            osc.stop(now + idx * 0.07 + 0.7);
+          });
+        }
+      }
+
+      playClash() {
+        if (!this.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        // Soft metallic clink (never harsh)
+        [1180, 1740].forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+          osc.frequency.exponentialRampToValueAtTime(freq * 0.85, now + 0.16);
+          gain.gain.setValueAtTime(i === 0 ? 0.22 : 0.14, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        });
+          }
+      toggleAmbient(enable) {
+        this.ambientEnabled = enable;
+        if (enable) {
+          this.init();
+          if (!this.ctx || this.ambientNodes) return;
+          const master = this.ctx.createGain();
+          master.gain.setValueAtTime(0.001, this.ctx.currentTime);
+          master.gain.linearRampToValueAtTime(0.05, this.ctx.currentTime + 1.5);
+          master.connect(this.ctx.destination);
+
+          const freqs = [196.0, 246.94, 293.66, 369.99]; // Gmaj9 warm pad
+          const oscs = freqs.map((f, idx) => {
+            const osc = this.ctx.createOscillator();
+            osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+            osc.frequency.setValueAtTime(f, this.ctx.currentTime);
+            osc.connect(master);
+            osc.start();
+            return osc;
+          });
+          this.ambientNodes = { oscs, master };
+        } else if (this.ambientNodes) {
+          const { oscs, master } = this.ambientNodes;
+          try {
+            master.gain.linearRampToValueAtTime(0.0001, this.ctx.currentTime + 0.4);
+            setTimeout(() => oscs.forEach(o => { try { o.stop(); } catch (e) {} }), 450);
+          } catch (e) {}
+          this.ambientNodes = null;
+        }
+      }
+    }
+
+    const audio = new ZenKnifeAudio();
+
+    /**
+     * =========================================================================
+     * 2. KNIFE SKINS & BOSS DEFINITIONS
+     * =========================================================================
+     */
+    const KNIFE_SKINS = [
+      {
+        id: 'chef',
+        name: 'Classic Chef',
+        bladeColor: '#e4ebf2',
+        bladeEdge: '#ffffff',
+        bladeShadow: '#8e9eab',
+        guardColor: '#4c5866',
+        handleColor: '#3a4659',
+        rivetColor: '#b0bec5',
+        glow: null,
+        unlocked: true
+      },
+      {
+        id: 'royal_dagger',
+        name: 'Royal Dagger',
+        bladeColor: '#f5f8fc',
+        bladeEdge: '#ffffff',
+        bladeShadow: '#9db1c4',
+        guardColor: '#ffca3a',
+        handleColor: '#3a1c54',
+        rivetColor: '#ff598f',
+        glow: 'rgba(255, 215, 90, 0.45)',
+        unlocked: false
+      },
+      {
+        id: 'crystal_spear',
+        name: 'Crystal Spear',
+        bladeColor: '#9ef5ff',
+        bladeEdge: '#ffffff',
+        bladeShadow: '#38b6d9',
+        guardColor: '#ffd166',
+        handleColor: '#1b6ca8',
+        rivetColor: '#80ffdb',
+        glow: 'rgba(110, 240, 255, 0.5)',
+        unlocked: false
+      },
+      {
+        id: 'sakura_kunai',
+        name: 'Sakura Kunai',
+        bladeColor: '#ffd6e7',
+        bladeEdge: '#ffffff',
+        bladeShadow: '#e07a9f',
+        guardColor: '#ff9ebb',
+        handleColor: '#7a2846',
+        rivetColor: '#ffe5ec',
+        glow: 'rgba(255, 145, 185, 0.45)',
+        unlocked: false
+      },
+      {
+        id: 'emerald_katana',
+        name: 'Jade Katana',
+        bladeColor: '#a8ffbe',
+        bladeEdge: '#ffffff',
+        bladeShadow: '#2cb354',
+        guardColor: '#f4a261',
+        handleColor: '#1d4e31',
+        rivetColor: '#ffd166',
+        glow: 'rgba(85, 240, 130, 0.45)',
+        unlocked: false
+      },
+      {
+        id: 'solar_flare',
+        name: 'Solar Flare',
+        bladeColor: '#ffe169',
+        bladeEdge: '#ffffff',
+        bladeShadow: '#e87a12',
+        guardColor: '#ff4d4d',
+        handleColor: '#5c1916',
+        rivetColor: '#ffca3a',
+        glow: 'rgba(255, 165, 45, 0.55)',
+        unlocked: false
+      }
+    ];
+
+    const BOSS_TYPES = [
+      { id: 'tomato', name: 'Juicy Tomato', outer: '#d62828', inner: '#ff595e', flesh: '#fcbf49', seeds: '#fff3b0' },
+      { id: 'coconut', name: 'Fresh Coconut', outer: '#5c3317', inner: '#f8f9fa', flesh: '#e9ecef', seeds: null },
+      { id: 'durian', name: 'Golden Durian', outer: '#9ef01a', inner: '#fff3b0', flesh: '#ffd166', seeds: null },
+      { id: 'grapefruit', name: 'Blood Orange', outer: '#f77f00', inner: '#ffbe0b', flesh: '#fb5607', seeds: '#fff' },
+      { id: 'watermelon', name: 'Sweet Melon', outer: '#2b9348', inner: '#d8f3dc', flesh: '#ef233c', seeds: '#2b2d42' }
+    ];
+
+    const FRUIT_TYPES = [
+      { id: 'apple', color: '#e63946', highlight: '#ff8fa3', leaf: '#52b788', inside: '#fff3b0' },
+      { id: 'lemon', color: '#ffd166', highlight: '#fff3b0', leaf: '#70e000', inside: '#ffe66d' },
+      { id: 'melon', color: '#38b000', highlight: '#9ef01a', leaf: '#007200', inside: '#ff4d6d' },
+      { id: 'persimmon', color: '#f77f00', highlight: '#fcbf49', leaf: '#2d6a4f', inside: '#ffba08' },
+      { id: 'durian_bud', color: '#b5e48c', highlight: '#d9ed92', leaf: '#52b788', inside: '#ffe169' }
+    ];
+
+    /**
+    * =========================================================================
+     * 3. GAME STATE & RELAXING PATTERN GENERATOR
+     * =========================================================================
+     */
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let W = 0, H = 0, DPR = 1;
+    let woodPatternCanvas = null;
+
+    const state = {
+      level: 1,
+      stage: 0, // 0, 1, 2 = Regular Wood Log | 3 = Boss Stage
+      fruitsCollected: 0,
+      equippedSkinId: 'chef',
+      pendingUnlockSkin: null,
+
+      // Settings
+      zenRelaxMode: true,
+      hapticsEnabled: true,
+
+      // Wheel / Target state
+      wheelAngle: 0,
+      wheelRadius: 96,
+      wheelY: 0,
+      wheelHitRecoil: 0,
+      wheelFlashAlpha: 0,
+      targetType: 'wood', // 'wood' or boss object
+      patternMode: 'zen_steady',
+      patternLabel: 'Zen Spin',
+      patternTime: 0,
+
+      // Knives & Fruits on wheel
+      knivesTotal: 6,
+      knivesRemaining: 6,
+      stuckKnives: [], // { angle, skinId, wobble }
+      attachedFruits: [], // { angle, type, sliced }
+
+      // Active thrown knife
+      flyingKnife: null, // { y, speed, bouncing, vx, vy, rot, vRot }
+      readyKnifeRecoil: 0,
+
+      // Shatter & Particle effects
+      shatterPieces: [],
+      particles: [],
+      floatingTexts: [],
+      stageLocked: false
+    };
+
+    function getEquippedSkin() {
+      return KNIFE_SKINS.find(s => s.id === state.equippedSkinId) || KNIFE_SKINS[0];
+    }
+
+    /**
+     * Generates a rich, seamless procedural dark-wood tabletop texture once
+     */
+    function buildWoodBackground() {
+      const off = document.createElement('canvas');
+      off.width = 512;
+      off.height = 512;
+      const octx = off.getContext('2d');
+
+      // Warm mahogany base
+      octx.fillStyle = '#683419';
+      octx.fillRect(0, 0, 512, 512);
+
+      // Vertical wood grain fibers
+      for (let x = 0; x < 512; x += 2) {
+        const wave = Math.sin(x * 0.045) * 12 + Math.cos(x * 0.13) * 6;
+        const alpha = 0.04 + (Math.abs(Math.sin(x * 0.09 + wave * 0.02)) * 0.12);
+        octx.fillStyle = x % 4 === 0 ? `rgba(34, 13, 4, ${alpha})` : `rgba(155, 84, 44, ${alpha * 0.7})`;
+        octx.fillRect(x, 0, 2, 512);
+      }
+
+      // Plank seams
+      [128, 256, 384].forEach(px => {
+        octx.fillStyle = 'rgba(26, 9, 2, 0.36)';
+        octx.fillRect(px, 0, 2, 512);
+        octx.fillStyle = 'rgba(255, 195, 140, 0.06)';
+        octx.fillRect(px + 2, 0, 1.5, 512);
+      });
+
+      woodPatternCanvas = off;
+    }
+
+    function resizeCanvas() {
+      DPR = Math.min(window.devicePixelRatio || 1, 2);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W * DPR;
+      canvas.height = H * DPR;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+      const minDim = Math.min(W, H * 0.56);
+      state.wheelRadius = Math.max(76, Math.min(112, minDim * 0.25));
+      state.wheelY = H * 0.355;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    /**
+     * Initializes a stage with varied, soothing rotation patterns and clean fruit/knife layouts
+     */
+    function setupStage(level, stage) {
+      state.level = level;
+      state.stage = stage;
+      state.stageLocked = false;
+      state.flyingKnife = null;
+      state.shatterPieces = [];
+      state.wheelAngle = 0;
+      state.patternTime = 0;
+      state.wheelHitRecoil = 0;
+      state.wheelFlashAlpha = 0;
+
+      const isBoss = stage === 3;
+      if (isBoss) {
+        const bossObj = BOSS_TYPES[(level - 1) % BOSS_TYPES.length];
+        state.targetType = bossObj;
+        document.getElementById('boss-subtitle').textContent = `BOSS: ${bossObj.name}`;
+      } else {
+        state.targetType = 'wood';
+        document.getElementById('boss-subtitle').textContent = '';
+      }
+
+      // Update HUD
+      document.getElementById('level-label').textContent = `Level ${level}`;
+      document.querySelectorAll('#stage-dots [data-stage]').forEach((el, idx) => {
+        el.classList.remove('active', 'completed');
+        if (idx < stage) el.classList.add('completed');
+        else if (idx === stage) el.classList.add('active');
+      });
+
+      // Choose relaxing rotation pattern based on level & stage
+      const patterns = [
+        { id: 'zen_steady', label: 'Zen Steady Spin' },
+        { id: 'harmonic_pulse', label: 'Breathing Pulse' },
+        { id: 'pendulum_sway', label: 'Gentle Pendulum' },
+        { id: 'reverse_chime', label: 'Calm Reverse Wave' },
+        { id: 'double_wave', label: 'Rhythmic Flow' }
+      ];
+      let chosenPattern;
+      if (level === 1 && stage === 0) {
+        chosenPattern = patterns[0];
+      } else if (isBoss) {
+        chosenPattern = patterns[(level + 2) % patterns.length];
+      } else {
+        chosenPattern = patterns[(level + stage) % patterns.length];
+      }
+      state.patternMode = chosenPattern.id;
+      state.patternLabel = chosenPattern.label;
+      document.getElementById('pattern-pill').textContent = chosenPattern.label;
+
+      // Determine number of knives to throw (comfortable, rhythmic count)
+      const baseKnives = isBoss ? 7 + Math.min(4, Math.floor(level / 2)) : 5 + Math.min(4, stage + Math.floor(level / 3));
+      state.knivesTotal = baseKnives;
+      state.knivesRemaining = baseKnives;
+
+      // Generate symmetric pre-stuck knives & juicy rim fruits
+      state.stuckKnives = [];
+      state.attachedFruits = [];
+
+      const preKnifeCount = (level === 1 && stage === 0)
+        ? 0
+        : Math.min(3, Math.floor((level + stage) / 2));
+
+      const occupiedAngles = [];
+
+      // Symmetric obstacle knives
+      for (let i = 0; i < preKnifeCount; i++) {
+        const ang = (i * (Math.PI * 2)) / preKnifeCount + Math.PI * 0.25;
+        occupiedAngles.push(ang);
+        state.stuckKnives.push({
+          angle: ang,
+          skinId: 'chef',
+          wobble: 0
+        });
+      }
+
+      // Attach 1 to 3 juicy fruits in open gaps on the rim
+      const fruitCount = isBoss ? 3 : 1 + ((level + stage) % 2);
+      const fruitType = FRUIT_TYPES[(level + stage) % FRUIT_TYPES.length];
+
+      for (let f = 0; f < fruitCount; f++) {
+        let candidate = (f * (Math.PI * 2)) / fruitCount + 0.65;
+        // Ensure fruit doesn't overlap with any pre-stuck knife
+        let safe = true;
+        for (const oa of occupiedAngles) {
+          if (angleDiff(candidate, oa) < 0.36) {
+            safe = false;
+            break;
+          }
+        }
+        if (safe) {
+          occupiedAngles.push(candidate);
+          state.attachedFruits.push({
+            angle: candidate,
+            type: fruitType,
+            sliced: false
+          });
+        }
+      }
+    }
+
+    function angleDiff(a, b) {
+      let d = Math.abs(a - b) % (Math.PI * 2);
+      return d > Math.PI ? Math.PI * 2 - d : d;
+    }
+
+    function normalizeAngle(a) {
+      return ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    }
+
+    /**
+     * =========================================================================
+     * 4. PLAYER INPUT: THROW KNIFE ON TAP / CLICK / SPACE
+     * =========================================================================
+     */
+    function throwKnife() {
+      if (state.stageLocked) return;
+      if (state.flyingKnife !== null) return;
+      if (state.knivesRemaining <= 0) return;
+
+      audio.init();
+      audio.playThrow();
+
+      state.flyingKnife = {
+        y: H * 0.78,
+        speed: Math.max(1550, H * 2.35),
+        bouncing: false,
+        vx: 0,
+        vy: 0,
+        rot: 0,
+        vRot: 0
+      };
+      state.readyKnifeRecoil = 14;
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      throwKnife();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        throwKnife();
+      }
+    });
+
+    /**
+     * =========================================================================
+     * 5. PHYSICS, COLLISIONS & PARTICLE EFFECTS
+     * =========================================================================
+     */
+    function spawnHitParticles(x, y, color1, color2, count = 14) {
+      for (let i = 0; i < count; i++) {
+        const ang = Math.PI * 0.15 + Math.random() * Math.PI * 0.7; // Downward splash/splinter arc
+        const spd = 90 + Math.random() * 240;
+        state.particles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * spd * (Math.random() > 0.5 ? 1 : -1),
+          vy: Math.sin(ang) * spd * 0.7 - 40,
+          size: 4 + Math.random() * 5,
+          color: i % 2 === 0 ? color1 : color2,
+          rot: Math.random() * Math.PI * 2,
+          vRot: (Math.random() - 0.5) * 14,
+          alpha: 1,
+          isChip: true
+        });
+      }
+    }
+
+    function spawnFruitSliceHalves(x, y, fruitType) {
+      // Two fruit halves flying outward + juice droplets
+      [-1, 1].forEach(dir => {
+        state.particles.push({
+          x: x + dir * 8,
+          y,
+          vx: dir * (130 + Math.random() * 70),
+          vy: -120 - Math.random() * 80,
+          size: 16,
+          fruitType,
+          halfDir: dir,
+          rot: 0,
+          vRot: dir * 7,
+          alpha: 1,
+          isFruitHalf: true
+        });
+      });
+
+      spawnHitParticles(x, y, fruitType.color, fruitType.inside, 16);
+      state.floatingTexts.push({
+        x,
+        y: y - 16,
+        text: '+1 🍎',
+        alpha: 1,
+        vy: -55
+      });
+    }
+
+    function triggerTargetShatter() {
+      state.stageLocked = true;
+      const isBoss = state.stage === 3;
+      audio.playShatter(isBoss);
+
+      if (state.hapticsEnabled && navigator.vibrate) {
+        try { navigator.vibrate([35, 30, 55]); } catch (e) {}
+      }
+
+      const cx = W / 2;
+      const cy = state.wheelY;
+      const r = state.wheelRadius;
+      const pieceCount = 5;
+
+      // Create 5 wedge chunks of the wheel
+      for (let i = 0; i < pieceCount; i++) {
+        const startA = state.wheelAngle + (i * Math.PI * 2) / pieceCount;
+        const endA = state.wheelAngle + ((i + 1) * Math.PI * 2) / pieceCount;
+        const midA = (startA + endA) / 2;
+
+        // Find any stuck knives belonging to this wedge
+        const wedgeKnives = state.stuckKnives.filter(k => {
+          const ka = normalizeAngle(k.angle + state.wheelAngle);
+          const sa = normalizeAngle(startA);
+          const ea = normalizeAngle(endA);
+          if (sa < ea) return ka >= sa && ka <= ea;
+          return ka >= sa || ka <= ea;
+        }).map(k => ({
+          relAngle: (k.angle + state.wheelAngle) - midA,
+          skinId: k.skinId
+        }));
+
+        state.shatterPieces.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(midA) * (170 + Math.random() * 110),
+          vy: Math.sin(midA) * (150 + Math.random() * 90) - 140,
+          rot: 0,
+          vRot: (Math.random() > 0.5 ? 1 : -1) * (3.5 + Math.random() * 3),
+          startA: startA - midA,
+          endA: endA - midA,
+          midA,
+          radius: r,
+          targetType: state.targetType,
+          knives: wedgeKnives,
+          alpha: 1
+        });
+      }
+
+      // Extra burst particles
+      const c1 = isBoss ? state.targetType.inner : '#e69d45';
+      const c2 = isBoss ? state.targetType.flesh : '#8c471c';
+      spawnHitParticles(cx, cy, c1, c2, 26);
+
+      // Advance after shatter settles
+      setTimeout(() => {
+        if (isBoss) {
+          handleBossVictory();
+        } else {
+          setupStage(state.level, state.stage + 1);
+        }
+      }, 950);
+    }
+
+    function handleBossVictory() {
+      // Find next locked knife skin to unlock
+      const nextLocked = KNIFE_SKINS.find(s => !s.unlocked);
+      if (nextLocked) {
+        nextLocked.unlocked = true;
+        state.pendingUnlockSkin = nextLocked;
+        document.getElementById('reward-heading').textContent = `Level ${state.level} Cleared!`;
+        document.getElementById('reward-desc').textContent = `New Blade Unlocked: ${nextLocked.name}`;
+      } else {
+        state.pendingUnlockSkin = getEquippedSkin();
+        document.getElementById('reward-heading').textContent = `Level ${state.level} Mastered!`;
+        document.getElementById('reward-desc').textContent = `Bonus +5 Juicy Fruits Collected!`;
+        state.fruitsCollected += 5;
+        document.getElementById('fruit-count').textContent = state.fruitsCollected;
+      }
+      drawRewardKnifePreview(state.pendingUnlockSkin);
+      document.getElementById('reward-overlay').classList.add('open');
+    }
+
+    /**
+     * Updates wheel rotation using smooth, relaxing ASMR motion profiles
+     */
+    function updateWheelRotation(dt) {
+      state.patternTime += dt;
+      const t = state.patternTime;
+      const speedScale = 1 + Math.min(0.65, (state.level - 1) * 0.08);
+      let omega = 1.65 * speedScale; // Base radians/sec
+
+      switch (state.patternMode) {
+        case 'zen_steady':
+          omega = 1.55 * speedScale;
+          break;
+        case 'harmonic_pulse':
+          // Smooth breathing wave: slows gracefully and speeds up rhythmically
+          omega = (1.45 + Math.sin(t * 2.1) * 0.75) * speedScale;
+          break;
+        case 'pendulum_sway':
+          // Smooth pendulum swing back & forth
+          omega = Math.cos(t * 1.45) * 2.25 * speedScale;
+          break;
+        case 'reverse_chime':
+          // Smoothly slows to zero every ~3.2s and reverses direction
+          omega = Math.sin(t * 1.15) * 2.35 * speedScale;
+          break;
+        case 'double_wave':
+          omega = (1.2 + Math.sin(t * 1.7) * 0.9 + Math.cos(t * 3.4) * 0.35) * speedScale;
+          break;
+      }
+
+      state.wheelAngle = normalizeAngle(state.wheelAngle + omega * dt);
+    }
+
+    function updateSimulation(dt) {
+      // Decay visual recoils
+      state.wheelHitRecoil = Math.max(0, state.wheelHitRecoil - dt * 65);
+      state.wheelFlashAlpha = Math.max(0, state.wheelFlashAlpha - dt * 3.2);
+      state.readyKnifeRecoil = Math.max(0, state.readyKnifeRecoil - dt * 80);
+
+      state.stuckKnives.forEach(k => {
+        k.wobble = Math.max(0, k.wobble - dt * 9);
+      });
+
+      if (!state.stageLocked) {
+        updateWheelRotation(dt);
+      }
+
+      // Update flying knife
+      const fk = state.flyingKnife;
+      if (fk) {
+        if (!fk.bouncing) {
+          fk.y -= fk.speed * dt;
+          const impactY = state.wheelY + state.wheelRadius - 6;
+
+          if (fk.y <= impactY) {
+            const cx = W / 2;
+            // Bottom of wheel corresponds to local angle PI/2 - wheelAngle
+            const hitLocalAngle = normalizeAngle(Math.PI / 2 - state.wheelAngle);
+
+            // 1. Check if hitting any attached fruit on the rim first
+            state.attachedFruits.forEach(f => {
+              if (!f.sliced && angleDiff(f.angle, hitLocalAngle) < 0.25) {
+                f.sliced = true;
+                state.fruitsCollected += 1;
+                document.getElementById('fruit-count').textContent = state.fruitsCollected;
+                audio.playFruitSlice();
+                const fx = cx + Math.cos(f.angle + state.wheelAngle) * (state.wheelRadius + 16);
+                const fy = state.wheelY + Math.sin(f.angle + state.wheelAngle) * (state.wheelRadius + 16);
+                spawnFruitSliceHalves(fx, fy, f.type);
+              }
+            });
+
+            // 2. Check collision with existing stuck knives
+            let collided = false;
+            for (const sk of state.stuckKnives) {
+              if (angleDiff(sk.angle, hitLocalAngle) < 0.175) {
+                collided = true;
+                break;
+              }
+            }
+
+            if (collided) {
+              audio.playClash();
+              if (state.hapticsEnabled && navigator.vibrate) {
+                try { navigator.vibrate(30); } catch (e) {}
+              }
+
+              // Bounce knife gracefully downward
+              fk.bouncing = true;
+              fk.vx = (Math.random() > 0.5 ? 1 : -1) * 180;
+              fk.vy = 260;
+              fk.vRot = (Math.random() > 0.5 ? 1 : -1) * 11;
+
+              if (state.zenRelaxMode) {
+                // Gentle Zen forgiveness: doesn't fail the level, lets player refocus!
+                state.floatingTexts.push({
+                  x: cx,
+                  y: impactY + 26,
+                  text: 'Gentle Bounce ✨',
+                  alpha: 1,
+                  vy: -35
+                });
+              } else {
+                // Classic Arcade Mode fail screen
+                state.stageLocked = true;
+                setTimeout(() => {
+                  document.getElementById('fail-overlay').classList.add('open');
+                }, 420);
+              }
+            } else {
+              // Clean hit! Embed knife into wheel
+              const isBoss = state.stage === 3;
+              audio.playHit(isBoss);
+              if (state.hapticsEnabled && navigator.vibrate) {
+                try { navigator.vibrate(16); } catch (e) {}
+              }
+
+              state.stuckKnives.push({
+                angle: hitLocalAngle,
+                skinId: state.equippedSkinId,
+                wobble: 1
+              });
+
+              state.knivesRemaining -= 1;
+              state.flyingKnife = null;
+              state.wheelHitRecoil = 9;
+              state.wheelFlashAlpha = 0.35;
+
+              const c1 = isBoss ? state.targetType.inner : '#e8a148';
+              const c2 = isBoss ? state.targetType.flesh : '#8c471c';
+              spawnHitParticles(cx, impactY + 4, c1, c2, 12);
+
+              if (state.knivesRemaining <= 0) {
+                triggerTargetShatter();
+              }
+            }
+          }
+          } else {
+          // Bouncing knife physics
+          fk.x = (fk.x || W / 2) + fk.vx * dt;
+          fk.y += fk.vy * dt;
+          fk.vy += 980 * dt;
+          fk.rot += fk.vRot * dt;
+
+          if (fk.y > H + 120) {
+            state.flyingKnife = null;
+          }
+        }
+      }
+
+      // Update shatter pieces
+      for (let i = state.shatterPieces.length - 1; i >= 0; i--) {
+        const p = state.shatterPieces[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 880 * dt;
+        p.rot += p.vRot * dt;
+        p.alpha -= dt * 0.85;
+        if (p.alpha <= 0 || p.y > H + 200) {
+          state.shatterPieces.splice(i, 1);
+        }
+      }
+
+      // Update particles
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const pt = state.particles[i];
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+        pt.vy += 680 * dt;
+        pt.rot += pt.vRot * dt;
+        pt.alpha -= dt * 1.15;
+        if (pt.alpha <= 0 || pt.y > H + 80) {
+          state.particles.splice(i, 1);
+        }
+      }
+
+      // Update floating texts
+      for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
+        const ft = state.floatingTexts[i];
+        ft.y += ft.vy * dt;
+        ft.alpha -= dt * 1.1;
+        if (ft.alpha <= 0) state.floatingTexts.splice(i, 1);
+      }
+    }
+
+    /**
+     * =========================================================================
+     * 6. PROCEDURAL VECTOR-STYLE CANVAS RENDERER
+     * =========================================================================
+     */
+    function drawKnifeShape(c, skin, scale = 1) {
+      c.save();
+      c.scale(scale, scale);
+
+      if (skin.glow) {
+        c.shadowColor = skin.glow;
+        c.shadowBlur = 14;
+      }
+
+      // Blade (pointing upward: tip at y = -58, base at y = 0)
+      c.beginPath();
+      c.moveTo(0, -58);
+      c.quadraticCurveTo(9, -32, 8.5, 0);
+      c.lineTo(-8.5, 0);
+      c.quadraticCurveTo(-9, -32, 0, -58);
+      c.closePath();
+      c.fillStyle = skin.bladeColor;
+      c.fill();
+
+      // Right bevel shadow
+      c.beginPath();
+      c.moveTo(0, -58);
+      c.quadraticCurveTo(9, -32, 8.5, 0);
+      c.lineTo(0, 0);
+      c.closePath();
+      c.fillStyle = skin.bladeShadow;
+      c.fill();
+
+      // Crisp center ridge highlight
+      c.beginPath();
+      c.moveTo(0, -54);
+      c.lineTo(0, -2);
+      c.strokeStyle = skin.bladeEdge;
+      c.lineWidth = 1.4;
+      c.stroke();
+
+      c.shadowBlur = 0;
+
+      // Crossguard / Hilt collar
+      c.fillStyle = skin.guardColor;
+      roundRect(c, -12, -2, 24, 6, 3);
+      c.fill();
+
+      // Handle
+      c.fillStyle = skin.handleColor;
+      roundRect(c, -6.5, 4, 13, 34, 4);
+      c.fill();
+          // Metallic rivets on handle
+      c.fillStyle = skin.rivetColor;
+      [13, 23, 32].forEach(ry => {
+        c.beginPath();
+        c.arc(0, ry, 2.1, 0, Math.PI * 2);
+        c.fill();
+      });
+
+      c.restore();
+    }
+
+    function roundRect(c, x, y, w, h, r) {
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.lineTo(x + w - r, y);
+      c.quadraticCurveTo(x + w, y, x + w, y + r);
+      c.lineTo(x + w, y + h - r);
+      c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      c.lineTo(x + r, y + h);
+      c.quadraticCurveTo(x, y + h, x, y + h - r);
+      c.lineTo(x, y + r);
+      c.quadraticCurveTo(x, y, x + r, y);
+      c.closePath();
+    }
+
+    function drawTargetWheel(c, radius, targetType) {
+      // Soft ambient drop shadow behind wheel
+      c.save();
+      c.beginPath();
+      c.arc(0, 12, radius + 4, 0, Math.PI * 2);
+      c.fillStyle = 'rgba(16, 6, 1, 0.48)';
+      c.fill();
+      c.restore();
+
+      if (targetType === 'wood') {
+        // Outer dark bark ring
+        c.beginPath();
+        c.arc(0, 0, radius, 0, Math.PI * 2);
+        c.fillStyle = '#5c280e';
+        c.fill();
+
+        // Warm golden inner wood face
+        const innerR = radius * 0.89;
+        const grad = c.createRadialGradient(0, 0, innerR * 0.1, 0, 0, innerR);
+        grad.addColorStop(0, '#f3b768');
+        grad.addColorStop(0.55, '#e39644');
+        grad.addColorStop(1, '#c97528');
+        c.beginPath();
+        c.arc(0, 0, innerR, 0, Math.PI * 2);
+        c.fillStyle = grad;
+        c.fill();
+
+        // Concentric growth rings
+        [0.72, 0.54, 0.36, 0.18].forEach((scale, idx) => {
+          c.beginPath();
+          c.arc(0, 0, innerR * scale, 0, Math.PI * 2);
+          c.strokeStyle = idx % 2 === 0 ? 'rgba(133, 63, 18, 0.35)' : 'rgba(255, 224, 178, 0.3)';
+          c.lineWidth = 2.5;
+          c.stroke();
+        });
+
+        // Radial bark cracks
+        const crackAngles = [0.3, 1.35, 2.4, 3.6, 4.9, 5.7];
+        crackAngles.forEach(ca => {
+          c.beginPath();
+          c.moveTo(Math.cos(ca) * radius, Math.sin(ca) * radius);
+          c.lineTo(Math.cos(ca + 0.04) * (radius * 0.72), Math.sin(ca + 0.04) * (radius * 0.72));
+          c.lineTo(Math.cos(ca - 0.04) * radius, Math.sin(ca - 0.04) * radius);
+          c.closePath();
+          c.fillStyle = '#471c07';
+          c.fill();
+        });
+      } else {
+        // Juicy Boss Target (Tomato, Coconut, Durian, Blood Orange, Watermelon)
+        if (targetType.id === 'durian') {
+          // Spiky outer crown for Durian
+          const spikes = 22;
+          c.beginPath();
+          for (let i = 0; i < spikes * 2; i++) {
+            const a = (i * Math.PI) / spikes;
+            const sr = i % 2 === 0 ? radius + 10 : radius - 2;
+            const px = Math.cos(a) * sr;
+            const py = Math.sin(a) * sr;
+            if (i === 0) c.moveTo(px, py);
+            else c.lineTo(px, py);
+          }
+          c.closePath();
+          c.fillStyle = targetType.outer;
+          c.fill();
+        } else {
+          c.beginPath();
+          c.arc(0, 0, radius, 0, Math.PI * 2);
+          c.fillStyle = targetType.outer;
+          c.fill();
+        }
+
+        // Inner rind
+        c.beginPath();
+        c.arc(0, 0, radius * 0.89, 0, Math.PI * 2);
+        c.fillStyle = targetType.inner;
+        c.fill();
+
+        // Juicy flesh core
+        c.beginPath();
+        c.arc(0, 0, radius * 0.81, 0, Math.PI * 2);
+        c.fillStyle = targetType.flesh;
+        c.fill();
+
+        // Citrus / Tomato segments
+        if (targetType.id === 'tomato' || targetType.id === 'grapefruit') {
+          const segs = targetType.id === 'tomato' ? 6 : 8;
+          for (let s = 0; s < segs; s++) {
+            const a = (s * Math.PI * 2) / segs;
+            c.beginPath();
+            c.moveTo(0, 0);
+            c.arc(0, 0, radius * 0.76, a + 0.06, a + (Math.PI * 2) / segs - 0.06);
+            c.closePath();
+            c.fillStyle = targetType.id === 'tomato' ? '#d92626' : '#f75c03';
+            c.fill();
+          }
+        }
+
+        // Seeds if applicable
+        if (targetType.seeds) {
+          c.fillStyle = targetType.seeds;
+          for (let i = 0; i < 12; i++) {
+            const a = (i * Math.PI * 2) / 12 + 0.2;
+            const dist = radius * 0.54;
+            c.beginPath();
+            c.ellipse(Math.cos(a) * dist, Math.sin(a) * dist, 4.5, 2.4, a, 0, Math.PI * 2);
+            c.fill();
+          }
+        }
+      }
+    }
+
+    function drawAttachedFruit(c, radius, fruit) {
+      const dist = radius + 15;
+      const fx = Math.cos(fruit.angle) * dist;
+      const fy = Math.sin(fruit.angle) * dist;
+
+      c.save();
+      c.translate(fx, fy);
+      c.rotate(fruit.angle + Math.PI / 2);
+
+      // Soft shadow
+      c.beginPath();
+      c.arc(0, 3, 15, 0, Math.PI * 2);
+      c.fillStyle = 'rgba(0,0,0,0.35)';
+      c.fill();
+
+      // Fruit body
+      c.beginPath();
+      c.arc(0, 0, 15, 0, Math.PI * 2);
+      c.fillStyle = fruit.type.color;
+      c.fill();
+
+      // Glossy highlight
+      c.beginPath();
+      c.arc(-4, -5, 4.5, 0, Math.PI * 2);
+      c.fillStyle = fruit.type.highlight;
+      c.fill();
+
+      // Little green leaf
+      c.beginPath();
+      c.ellipse(4, -14, 6, 3, -0.4, 0, Math.PI * 2);
+      c.fillStyle = fruit.type.leaf;
+      c.fill();
+
+      c.restore();
+    }
+
+    function render() {
+      // 1. Tiled Wooden Tabletop Background
+      if (woodPatternCanvas) {
+        const pat = ctx.createPattern(woodPatternCanvas, 'repeat');
+        ctx.fillStyle = pat;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // Warm radial lighting vignette
+      const vig = ctx.createRadialGradient(W / 2, H * 0.42, 40, W / 2, H * 0.5, Math.max(W, H) * 0.78);
+      vig.addColorStop(0, 'rgba(255, 205, 145, 0.14)');
+      vig.addColorStop(1, 'rgba(20, 7, 2, 0.56)');
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, W, H);
+
+      const cx = W / 2;
+      const cy = state.wheelY - state.wheelHitRecoil;
+      const r = state.wheelRadius;
+
+      // 2. Render Rotating Wheel + Stuck Knives + Fruits (if not shattered)
+      if (!state.stageLocked || state.shatterPieces.length === 0) {
+        // Stuck knives behind the wheel rim
+        state.stuckKnives.forEach(sk => {
+          const totalA = sk.angle + state.wheelAngle;
+          const wobbleOffset = Math.sin(sk.wobble * Math.PI * 4) * 0.08 * sk.wobble;
+          const skin = KNIFE_SKINS.find(s => s.id === sk.skinId) || KNIFE_SKINS[0];
+
+          ctx.save();
+          ctx.translate(cx + Math.cos(totalA) * (r - 8), cy + Math.sin(totalA) * (r - 8));
+          ctx.rotate(totalA - Math.PI / 2 + wobbleOffset);
+          drawKnifeShape(ctx, skin, 0.92);
+          ctx.restore();
+        });
+
+        // Rotating Wheel & Attached Fruits
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(state.wheelAngle);
+
+        state.attachedFruits.forEach(f => {
+          if (!f.sliced) drawAttachedFruit(ctx, r, f);
+        });
+
+        drawTargetWheel(ctx, r, state.targetType);
+
+        // Hit flash overlay
+        if (state.wheelFlashAlpha > 0) {
+          ctx.beginPath();
+          ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 255, 255, ${state.wheelFlashAlpha})`;
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+         // 3. Render Shattered Target Wedges
+      state.shatterPieces.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+
+        // Draw any knives stuck in this flying wedge
+        p.knives.forEach(wk => {
+          const skin = KNIFE_SKINS.find(s => s.id === wk.skinId) || KNIFE_SKINS[0];
+          ctx.save();
+          ctx.translate(Math.cos(wk.relAngle) * (p.radius - 8), Math.sin(wk.relAngle) * (p.radius - 8));
+          ctx.rotate(wk.relAngle - Math.PI / 2);
+          drawKnifeShape(ctx, skin, 0.9);
+          ctx.restore();
+        });
+
+        // Clip wedge slice
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, p.radius + 8, p.startA, p.endA);
+        ctx.closePath();
+        ctx.clip();
+
+        drawTargetWheel(ctx, p.radius, p.targetType);
+        ctx.restore();
+      });
+
+      // 4. Render Active Flying Knife
+      if (state.flyingKnife) {
+        const fk = state.flyingKnife;
+        ctx.save();
+        ctx.translate(fk.x || cx, fk.y);
+        ctx.rotate(fk.rot);
+        drawKnifeShape(ctx, getEquippedSkin(), 1.02);
+        ctx.restore();
+      }
+
+      // 5. Render Ready Knife at Bottom Center (if knives left & none currently flying)
+      if (!state.stageLocked && state.knivesRemaining > 0 && !state.flyingKnife) {
+        ctx.save();
+        ctx.translate(cx, H * 0.78 + state.readyKnifeRecoil);
+        drawKnifeShape(ctx, getEquippedSkin(), 1.05);
+        ctx.restore();
+      }
+
+      // 6. Render Bottom-Left Remaining Knives Stack
+      const stackStartX = 34;
+      const stackBottomY = H - Math.max(42, H * 0.06);
+      const stepY = 23;
+
+      for (let i = 0; i < state.knivesTotal; i++) {
+        const isLit = i < state.knivesRemaining;
+        const ky = stackBottomY - i * stepY;
+
+        ctx.save();
+        ctx.translate(stackStartX, ky);
+        ctx.rotate(-Math.PI * 0.28);
+        ctx.scale(0.46, 0.46);
+
+        if (isLit) {
+          drawKnifeShape(ctx, getEquippedSkin(), 1);
+        } else {
+          // Dark silhouette for already-thrown knives
+          ctx.fillStyle = 'rgba(20, 8, 2, 0.55)';
+          ctx.beginPath();
+          ctx.moveTo(0, -58);
+          ctx.lineTo(8.5, 0);
+          ctx.lineTo(12, 4);
+          ctx.lineTo(6.5, 4);
+          ctx.lineTo(6.5, 38);
+          ctx.lineTo(-6.5, 38);
+          ctx.lineTo(-6.5, 4);
+          ctx.lineTo(-12, 4);
+          ctx.lineTo(-8.5, 0);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // 7. Render Wood Chips, Fruit Slice Halves & Juice Particles
+      state.particles.forEach(pt => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pt.alpha);
+        ctx.translate(pt.x, pt.y);
+        ctx.rotate(pt.rot);
+
+        if (pt.isFruitHalf) {
+          ctx.beginPath();
+          ctx.arc(0, 0, pt.size, pt.halfDir > 0 ? -Math.PI / 2 : Math.PI / 2, pt.halfDir > 0 ? Math.PI / 2 : Math.PI * 1.5);
+          ctx.closePath();
+          ctx.fillStyle = pt.fruitType.color;
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(0, 0, pt.size * 0.78, pt.halfDir > 0 ? -Math.PI / 2 : Math.PI / 2, pt.halfDir > 0 ? Math.PI / 2 : Math.PI * 1.5);
+          ctx.closePath();
+          ctx.fillStyle = pt.fruitType.inside;
+          ctx.fill();
+        } else {
+          ctx.fillStyle = pt.color;
+          ctx.fillRect(-pt.size / 2, -pt.size / 2, pt.size, pt.size * 0.7);
+        }
+        ctx.restore();
+      });
+
+      // 8. Floating Reward / Zen Feedback Texts
+      state.floatingTexts.forEach(ft => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, ft.alpha);
+        ctx.font = '700 20px Fredoka, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#fff5c0';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+        ctx.shadowBlur = 6;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      });
+    }
+
+    /**
+    * =========================================================================
+     * 7. MAIN 60FPS ANIMATION LOOP & UI MODALS
+     * =========================================================================
+     */
+    let lastTime = 0;
+    function gameLoop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const dt = Math.min(0.05, (timestamp - lastTime) / 1000);
+      lastTime = timestamp;
+
+      updateSimulation(dt);
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function drawRewardKnifePreview(skin) {
+      const rCanvas = document.getElementById('reward-knife-canvas');
+      const rCtx = rCanvas.getContext('2d');
+      rCtx.clearRect(0, 0, rCanvas.width, rCanvas.height);
+
+      // Sunburst rays
+      rCtx.save();
+      rCtx.translate(85, 85);
+      for (let i = 0; i < 12; i++) {
+        rCtx.rotate(Math.PI / 6);
+        rCtx.beginPath();
+        rCtx.moveTo(0, 0);
+        rCtx.lineTo(-10, -78);
+        rCtx.lineTo(10, -78);
+        rCtx.closePath();
+        rCtx.fillStyle = 'rgba(255, 225, 115, 0.16)';
+        rCtx.fill();
+      }
+      rCtx.translate(0, 12);
+      drawKnifeShape(rCtx, skin, 1.45);
+      rCtx.restore();
+    }
+
+    function populateArmoryModal() {
+      const grid = document.getElementById('knives-grid');
+      grid.innerHTML = '';
+
+      KNIFE_SKINS.forEach(skin => {
+        // Also unlock skins automatically if user reaches fruit milestones (15 fruits per blade)
+        const idx = KNIFE_SKINS.indexOf(skin);
+        if (!skin.unlocked && state.fruitsCollected >= idx * 15) {
+          skin.unlocked = true;
+        }
+
+        const slot = document.createElement('div');
+        slot.className = `knife-slot ${skin.id === state.equippedSkinId ? 'equipped' : ''} ${!skin.unlocked ? 'locked' : ''}`;
+
+        const miniCanvas = document.createElement('canvas');
+        miniCanvas.width = 74;
+        miniCanvas.height = 84;
+        const mCtx = miniCanvas.getContext('2d');
+        mCtx.translate(37, 50);
+        drawKnifeShape(mCtx, skin, 0.78);
+
+        slot.appendChild(miniCanvas);
+        const label = document.createElement('span');
+        label.className = 'knife-slot-name';
+        label.textContent = skin.unlocked ? skin.name : `🔒 ${idx * 15} 🍎`;
+        slot.appendChild(label);
+
+        slot.addEventListener('click', () => {
+          if (skin.unlocked) {
+            state.equippedSkinId = skin.id;
+            populateArmoryModal();
+          }
+        });
+
+        grid.appendChild(slot);
+      });
+    }
+
+    // Modal & Button Listeners
+    document.getElementById('btn-armory').addEventListener('click', () => {
+      populateArmoryModal();
+      document.getElementById('armory-modal').classList.add('open');
+    });
+
+    document.getElementById('btn-settings').addEventListener('click', () => {
+      document.getElementById('settings-modal').classList.add('open');
+    });
+
+    document.querySelectorAll('[data-close]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById(btn.getAttribute('data-close')).classList.remove('open');
+      });
+    });
+
+    document.getElementById('btn-reward-next').addEventListener('click', () => {
+      document.getElementById('reward-overlay').classList.remove('open');
+      setupStage(state.level + 1, 0);
+    });
+
+    document.getElementById('btn-reward-equip').addEventListener('click', () => {
+      if (state.pendingUnlockSkin) {
+        state.equippedSkinId = state.pendingUnlockSkin.id;
+      }
+      document.getElementById('reward-overlay').classList.remove('open');
+      setupStage(state.level + 1, 0);
+    });
+
+    document.getElementById('btn-fail-replay').addEventListener('click', () => {
+      document.getElementById('fail-overlay').classList.remove('open');
+      setupStage(state.level, 0);
+    });
+
+    document.getElementById('btn-fail-continue').addEventListener('click', () => {
+      document.getElementById('fail-overlay').classList.remove('open');
+      setupStage(state.level, state.stage);
+    });
+
+    function bindToggle(id, initial, onChange) {
+      const el = document.getElementById(id);
+      let val = initial;
+      el.classList.toggle('on', val);
+      el.addEventListener('click', () => {
+        val = !val;
+        el.classList.toggle('on', val);
+        onChange(val);
+      });
+    }
+
+    bindToggle('toggle-zen', true, (v) => { state.zenRelaxMode = v; });
+    bindToggle('toggle-sound', true, (v) => { audio.soundEnabled = v; });
+    bindToggle('toggle-haptics', true, (v) => { state.hapticsEnabled = v; });
+    bindToggle('toggle-ambient', false, (v) => { audio.toggleAmbient(v); });
+
+    // Start Game on Window Load
+    window.addEventListener('load', () => {
+      buildWoodBackground();
+      resizeCanvas();
+      setupStage(1, 0);
+      requestAnimationFrame(gameLoop);
+    });
+  </script>
+</body>
+</html>
