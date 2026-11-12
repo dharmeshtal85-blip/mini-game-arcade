@@ -1,0 +1,1872 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pop It Fidget ASMR - Relaxing 3D Silicone Toy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-wood-dark: #4c2613;
+      --bg-wood-mid: #6b371c;
+      --bg-wood-light: #7f4324;
+      --ui-gold-light: #ffcb6b;
+      --ui-gold-dark: #d97719;
+      --ui-brown: #57280e;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-wood-mid);
+    }
+
+    /* Procedural Realistic Vertical Wood Grain Tabletop */
+    #wood-background {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        /* Warm vignette lighting */
+        radial-gradient(circle at 50% 48%, rgba(255, 200, 145, 0.14) 0%, rgba(25, 10, 3, 0.55) 100%),
+        /* Vertical plank seams */
+        repeating-linear-gradient(
+          90deg,
+          rgba(32, 13, 4, 0.38) 0px,
+          rgba(32, 13, 4, 0.38) 2px,
+          transparent 2px,
+          transparent 96px,
+          rgba(255, 190, 130, 0.06) 96px,
+          rgba(255, 190, 130, 0.06) 98px,
+          transparent 98px,
+          transparent 184px
+        ),
+        /* Fine vertical wood fibers */
+        repeating-linear-gradient(
+          90deg,
+          rgba(42, 18, 7, 0.18) 0px,
+          rgba(42, 18, 7, 0.18) 1px,
+          transparent 1px,
+          transparent 4px,
+          rgba(145, 78, 42, 0.14) 4px,
+          rgba(145, 78, 42, 0.14) 6px,
+          transparent 6px,
+          transparent 11px
+        ),
+        /* Base rich mahogany / walnut tone */
+        linear-gradient(180deg, #69351a 0%, #7c4122 45%, #623016 100%);
+    }
+
+    /* Subtle SVG turbulence wood grain overlay for organic texture */
+    #wood-grain-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      opacity: 0.24;
+      pointer-events: none;
+      mix-blend-mode: multiply;
+    }
+
+    /* Top HUD Bar */
+    #hud {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: max(14px, env(safe-area-inset-top)) 18px 12px;
+      pointer-events: none;
+    }
+
+    .hud-btn {
+      pointer-events: auto;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      border: 3.5px solid #ffd57e;
+      background: radial-gradient(circle at 35% 30%, #ffad42 0%, #d86d14 75%, #9e4708 100%);
+      box-shadow:
+        0 6px 12px rgba(0, 0, 0, 0.45),
+        inset 0 3px 5px rgba(255, 255, 255, 0.55),
+        inset 0 -4px 6px rgba(105, 42, 4, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.15s ease;
+      color: #fff6e5;
+    }
+
+    .hud-btn:active {
+      transform: scale(0.9);
+      filter: brightness(0.95);
+    }
+
+    .hud-btn svg {
+      width: 28px;
+      height: 28px;
+      filter: drop-shadow(0 2px 2px rgba(92, 36, 4, 0.5));
+    }
+
+    /* Center Level Pill */
+    #level-pill {
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 20px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(61, 27, 10, 0.85) 0%, rgba(39, 16, 5, 0.92) 100%);
+      border: 2px solid rgba(255, 206, 117, 0.45);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 230, 179, 0.25);
+      color: #ffebc2;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    #level-pill:active {
+      transform: scale(0.96);
+    }
+
+    #level-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+      line-height: 1.15;
+    }
+
+    #progress-text {
+      font-size: 12px;
+      font-weight: 500;
+      color: #ffca68;
+      opacity: 0.92;
+    }
+
+    /* Main Stage Container */
+    #stage {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 78px 14px 86px;
+    }
+
+    /* Toy Wrapper for Slide Transitions */
+    #toy-wrapper {
+      position: relative;
+      width: min(92vw, 440px);
+      height: min(92vw, 440px);
+      max-height: calc(100vh - 175px);
+      max-width: calc(100vh - 175px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      will-change: transform, opacity;
+      transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease;
+    }
+
+    #toy-wrapper.slide-out-left {
+      transform: translateX(-135vw) rotate(-6deg);
+      opacity: 0.2;
+    }
+
+    #toy-wrapper.slide-in-right {
+      transition: none;
+      transform: translateX(135vw) rotate(6deg);
+      opacity: 0.2;
+    }
+
+    #toy-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      filter: drop-shadow(0 20px 24px rgba(18, 6, 1, 0.62)) drop-shadow(0 5px 8px rgba(0, 0, 0, 0.4));
+    }
+
+    /* Interactive Bubble Styling inside SVG */
+    .pop-bubble {
+      cursor: pointer;
+      transform-box: fill-box;
+      transform-origin: center;
+      transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .pop-bubble:hover {
+      filter: brightness(1.04);
+    }
+
+    .pop-bubble.popping-anim {
+      animation: bubblePopSpring 0.24s cubic-bezier(0.22, 1.4, 0.36, 1);
+    }
+
+    @keyframes bubblePopSpring {
+      0% { transform: scale(1); }
+      40% { transform: scale(0.84); }
+      75% { transform: scale(1.06); }
+      100% { transform: scale(1); }
+    }
+
+    /* Bottom Action Controls (Flip / Next / Ambient Sound) */
+    #bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 10px 16px max(16px, env(safe-area-inset-bottom));
+      pointer-events: none;
+    }
+
+    .pill-action-btn {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 20px;
+      border-radius: 999px;
+      border: 2.5px solid #ffd57e;
+      background: linear-gradient(180deg, #ffae42 0%, #d96b12 100%);
+      color: #fff9ed;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      box-shadow:
+        0 6px 14px rgba(0, 0, 0, 0.42),
+        inset 0 2px 3px rgba(255, 255, 255, 0.5),
+        inset 0 -3px 5px rgba(102, 38, 3, 0.55);
+      cursor: pointer;
+      transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .pill-action-btn:active {
+      transform: scale(0.92);
+    }
+
+    .pill-action-btn.secondary {
+      background: linear-gradient(180deg, rgba(84, 39, 15, 0.92) 0%, rgba(52, 22, 7, 0.96) 100%);
+      border-color: rgba(255, 206, 117, 0.5);
+      color: #ffdf9e;
+    }
+
+    /* Confetti Canvas */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      pointer-events: none;
+    }
+
+    /* Modals (Home Level Picker & Settings) */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(20, 8, 2, 0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 420px;
+      max-height: 84vh;
+      overflow-y: auto;
+      border-radius: 28px;
+      background: linear-gradient(180deg, #743b1d 0%, #4c230e 100%);
+      border: 3.5px solid #ffcf75;
+      box-shadow: 0 22px 45px rgba(0, 0, 0, 0.65), inset 0 2px 6px rgba(255, 225, 165, 0.35);
+      padding: 22px 20px;
+      color: #fff5e0;
+      transform: scale(0.92) translateY(12px);
+      transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-backdrop.open .modal-card {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffd989;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .close-modal-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 2px solid #ffd57e;
+      background: #c75b0e;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* Level Grid inside Home Modal */
+    .levels-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .level-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 10px;
+      border-radius: 20px;
+      background: rgba(34, 14, 4, 0.55);
+      border: 2px solid rgba(255, 207, 117, 0.3);
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .level-card:hover, .level-card.active {
+      border-color: #ffd479;
+      background: rgba(255, 179, 71, 0.18);
+      transform: translateY(-2px);
+    }
+
+    .level-swatch {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .level-card-name {
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      color: #ffefd1;
+    }
+
+    /* Settings List */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      border-radius: 18px;
+      background: rgba(34, 14, 4, 0.52);
+      border: 1.5px solid rgba(255, 207, 117, 0.25);
+    }
+
+    .setting-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .setting-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .setting-desc {
+      font-size: 12px;
+      color: #e2be87;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 54px;
+      height: 30px;
+      border-radius: 999px;
+      background: #2f1406;
+      border: 2px solid #9e6738;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .toggle-switch.on {
+      background: #3eb857;
+      border-color: #9ff5ae;
+    }
+
+    .toggle-knob {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .toggle-switch.on .toggle-knob {
+      transform: translateX(24px);
+    }
+
+    /* Toast hint */
+    #toast-hint {
+      position: fixed;
+      top: 84px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-10px);
+      z-index: 25;
+      padding: 6px 16px;
+      border-radius: 999px;
+      background: rgba(34, 14, 4, 0.78);
+      border: 1px solid rgba(255, 212, 128, 0.35);
+      color: #ffe8ba;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      white-space: nowrap;
+    }
+
+    #toast-hint.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Procedural Wooden Tabletop -->
+  <div id="wood-background"></div>
+  <svg id="wood-grain-overlay" width="100%" height="100%">
+    <filter id="woodNoise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.18" numOctaves="3" seed="7" />
+      <feColorMatrix type="matrix" values="
+        0.35 0 0 0 0.15
+        0.20 0 0 0 0.08
+        0.08 0 0 0 0.03
+        0    0 0 0.7 0" />
+    </filter>
+    <rect width="100%" height="100%" filter="url(#woodNoise)" />
+  </svg>
+
+  <!-- Top HUD -->
+  <header id="hud">
+    <button id="btn-home" class="hud-btn" aria-label="Select Shape">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 3.172L2.293 12.879a1 1 0 001.414 1.414L5 13.001V20a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-6.999l1.293 1.292a1 1 0 001.414-1.414L12 3.172z"/>
+      </svg>
+    </button>
+
+    <div id="level-pill" title="Tap to choose pattern">
+      <span id="level-title">1. Golden Hexagon</span>
+      <span id="progress-text">0 / 19 Popped</span>
+    </div>
+
+    <button id="btn-settings" class="hud-btn" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+      </svg>
+    </button>
+  </header>
+
+  <div id="toast-hint">Tap or slide your finger across bubbles to pop!</div>
+
+  <!-- Main Interactive Pop It Toy Stage -->
+  <main id="stage">
+    <div id="toy-wrapper">
+      <svg id="toy-svg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </main>
+
+  <!-- Bottom Controls -->
+  <footer id="bottom-bar">
+    <button id="btn-flip" class="pill-action-btn secondary">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+      </svg>
+      Flip Toy
+    </button>
+    <button id="btn-next" class="pill-action-btn">
+      Next Shape
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14"/>
+        <path d="m12 5 7 7-7 7"/>
+      </svg>
+    </button>
+  </footer>
+
+  <!-- Celebration Confetti Layer -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Level Picker Modal -->
+  <div id="home-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Choose Pop It Shape</h2>
+        <button class="close-modal-btn" data-close="home-modal">&times;</button>
+      </div>
+      <div id="levels-grid" class="levels-grid"></div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Relax & ASMR Settings</h2>
+        <button class="close-modal-btn" data-close="settings-modal">&times;</button>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-title">ASMR Pop Sound</span>
+          <span class="setting-desc">Crisp silicone pop acoustics</span>
+        </div>
+        <div id="toggle-sound" class="toggle-switch on"><div class="toggle-knob"></div></div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-title">Haptic Vibration</span>
+          <span class="setting-desc">Gentle tactile pulse on mobile</span>
+        </div>
+        <div id="toggle-haptics" class="toggle-switch on"><div class="toggle-knob"></div></div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-title">Auto-Next Shape</span>
+          <span class="setting-desc">Slide in new toy when 100% popped</span>
+        </div>
+        <div id="toggle-autonext" class="toggle-switch on"><div class="toggle-knob"></div></div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-title">Zen Ambient Pad</span>
+          <span class="setting-desc">Soft warm background drone</span>
+        </div>
+        <div id="toggle-ambient" class="toggle-switch"><div class="toggle-knob"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * =========================================================================
+     * 1. WEB AUDIO API - SYNTHESIZED ASMR SILICONE POP & RELAXING CHIMES
+     * =========================================================================
+     */
+    class ASMRSoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.soundEnabled = true;
+        this.ambientEnabled = false;
+        this.ambientNodes = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            this.ctx = new AudioCtx();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      /**
+       * Synthesizes a realistic hollow silicone membrane "pop"
+       * @param {boolean} isUnpopping - Slightly softer, higher-pitched reverse pop
+       */
+      playPop(isUnpopping = false) {
+        if (!this.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        // Organic pitch jitter so rapid dragging sounds natural & deeply satisfying
+        const pitchJitter = 0.92 + Math.random() * 0.18;
+        const baseFreq = (isUnpopping ? 340 : 275) * pitchJitter;
+
+        // 1. Resonant membrane thump (rapid pitch sweep)
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(baseFreq * 0.55, now);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq * 2.15, now + 0.032);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.7, now + 0.085);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.55, now + 0.006);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+
+        // 2. Crisp silicone snap transient (filtered short noise burst)
+        const bufferSize = Math.floor(this.ctx.sampleRate * 0.035);
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.28));
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = noiseBuffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1450 * pitchJitter, now);
+
+        filter.Q.setValueAtTime(2.4, now);
+
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.42, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(this.ctx.destination);
+        noise.start(now);
+      }
+
+      /**
+       * Gentle sparkling wind-chime arpeggio when a toy is 100% popped
+       */
+      playCompletionChime() {
+        if (!this.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
+        const now = this.ctx.currentTime;
+
+        notes.forEach((freq, idx) => {
+          const startTime = now + idx * 0.075;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, startTime);
+
+          gain.gain.setValueAtTime(0.001, startTime);
+          gain.gain.linearRampToValueAtTime(0.18, startTime + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0008, startTime + 0.85);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + 0.9);
+        });
+      }
+
+      /**
+       * Optional warm, relaxing Zen ambient chord pad
+       */
+      toggleAmbient(enable) {
+        this.ambientEnabled = enable;
+        if (enable) {
+          this.init();
+          if (!this.ctx || this.ambientNodes) return;
+
+          const masterGain = this.ctx.createGain();
+          masterGain.gain.setValueAtTime(0.001, this.ctx.currentTime);
+          masterGain.gain.linearRampToValueAtTime(0.055, this.ctx.currentTime + 1.5);
+          masterGain.connect(this.ctx.destination);
+
+          // Warm Fmaj9 soothing frequencies
+          const freqs = [174.61, 220.00, 261.63, 329.63];
+          const oscs = freqs.map((f, i) => {
+            const osc = this.ctx.createOscillator();
+            osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+            osc.frequency.setValueAtTime(f, this.ctx.currentTime);
+            osc.detune.setValueAtTime((i - 1.5) * 4, this.ctx.currentTime);
+            osc.connect(masterGain);
+            osc.start();
+            return osc;
+          });
+
+          this.ambientNodes = { oscs, masterGain };
+        } else if (this.ambientNodes) {
+          const { oscs, masterGain } = this.ambientNodes;
+          try {
+            masterGain.gain.linearRampToValueAtTime(0.0001, this.ctx.currentTime + 0.4);
+            setTimeout(() => {
+              oscs.forEach(o => { try { o.stop(); } catch (e) {} });
+            }, 450);
+          } catch (e) {}
+          this.ambientNodes = null;
+        }
+      }
+                                        }
+    const audio = new ASMRSoundEngine();
+
+    /**
+     * =========================================================================
+     * 2. CONFETTI PARTICLE SYSTEM
+     * =========================================================================
+     */
+    const confettiCanvas = document.getElementById('confetti-canvas');
+    const cCtx = confettiCanvas.getContext('2d');
+    let confettiParticles = [];
+    let confettiAnimId = null;
+
+    function resizeConfettiCanvas() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeConfettiCanvas);
+    resizeConfettiCanvas();
+
+    function launchConfetti() {
+      const colors = ['#ff595e', '#ffca3a', '#8ac926', '#1982c4', '#b5179e', '#ff9f1c', '#4cc9f0'];
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+
+      for (let i = 0; i < 85; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 5 + Math.random() * 12;
+        confettiParticles.push({
+          x: cx + (Math.random() - 0.5) * 80,
+          y: cy + (Math.random() - 0.5) * 80,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 4,
+          size: 7 + Math.random() * 8,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          vRot: (Math.random() - 0.5) * 14,
+          shape: Math.random() > 0.45 ? 'rect' : (Math.random() > 0.5 ? 'circle' : 'star'),
+          alpha: 1
+        });
+      }
+
+      if (!confettiAnimId) {
+        animateConfetti();
+      }
+    }
+
+    function animateConfetti() {
+      cCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+
+      for (let i = confettiParticles.length - 1; i >= 0; i--) {
+        const p = confettiParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.34; // Gravity
+        p.vx *= 0.97; // Air drag
+        p.rotation += p.vRot;
+        p.alpha -= 0.011;
+
+        if (p.alpha <= 0 || p.y > confettiCanvas.height + 30) {
+          confettiParticles.splice(i, 1);
+          continue;
+        }
+
+        cCtx.save();
+        cCtx.globalAlpha = Math.max(0, p.alpha);
+        cCtx.translate(p.x, p.y);
+        cCtx.rotate((p.rotation * Math.PI) / 180);
+        cCtx.fillStyle = p.color;
+
+        if (p.shape === 'rect') {
+          cCtx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.65);
+        } else if (p.shape === 'circle') {
+          cCtx.beginPath();
+          cCtx.arc(0, 0, p.size * 0.45, 0, Math.PI * 2);
+          cCtx.fill();
+        } else {
+          // Mini 5-point star
+          cCtx.beginPath();
+          for (let s = 0; s < 5; s++) {
+            const a1 = (s * 4 * Math.PI) / 5;
+            const r = p.size * 0.58;
+            if (s === 0) cCtx.moveTo(Math.cos(a1) * r, Math.sin(a1) * r);
+            else cCtx.lineTo(Math.cos(a1) * r, Math.sin(a1) * r);
+          }
+          cCtx.closePath();
+          cCtx.fill();
+        }
+        cCtx.restore();
+      }
+
+      if (confettiParticles.length > 0) {
+        confettiAnimId = requestAnimationFrame(animateConfetti);
+      } else {
+        confettiAnimId = null;
+      }
+    }
+
+    /**
+     * =========================================================================
+     * 3. COLOR PALETTES & 3D SILICONE SHADER DEFINITIONS
+     * =========================================================================
+     */
+    const PALETTES = {
+      gold: {
+        base: '#f6b928',
+        light: '#ffe169',
+        mid: '#e8a212',
+        dark: '#b37104',
+        deep: '#784700',
+        rim: '#ffea8f'
+      },
+      green: {
+
+        base: '#25b84b',
+        light: '#5ce67e',
+        mid: '#1da13f',
+        dark: '#117029',
+        deep: '#084718',
+        rim: '#8bf5a4'
+      },
+      yellow: {
+        base: '#f7d022',
+        light: '#fff06b',
+        mid: '#e6b80e',
+        dark: '#ad8200',
+        deep: '#735300',
+        rim: '#fff69e'
+      },
+      blue: {
+        base: '#4aa5f5',
+        light: '#88c9ff',
+        mid: '#328ee0',
+        dark: '#1b63ab',
+        deep: '#0e3d70',
+        rim: '#b8e0ff'
+      },
+      purple: {
+        base: '#c45be6',
+        light: '#e496ff',
+        mid: '#ad42d1',
+        dark: '#792199',
+        deep: '#4d0f66',
+        rim: '#f2c2ff'
+      },
+      red: {
+        base: '#f24b4b',
+        light: '#ff8585',
+        mid: '#d93232',
+        dark: '#9e1919',
+        deep: '#660a0a',
+        rim: '#ffb3b3'
+      },
+      orange: {
+        base: '#ff8e2b',
+        light: '#ffba73',
+        mid: '#e67312',
+        dark: '#ad4c00',
+        deep: '#702e00',
+        rim: '#ffd5ab'
+      },
+      pink: {
+        base: '#ff6ba8',
+        light: '#ffa6cb',
+        mid: '#e64e8d',
+        dark: '#ab265d',
+        deep: '#6e1037',
+        rim: '#ffcce2'
+      }
+    };
+
+    const RAINBOW_STRIPE_KEYS = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'];
+
+    /**
+     * =========================================================================
+     * 4. SHAPE & LEVEL DEFINITIONS (8 DISTINCT SHAPES + RANDOM GENERATOR)
+     * =========================================================================
+     */
+    const LEVELS = [
+      {
+        id: 'hexagon',
+        name: 'Golden Hexagon',
+        emoji: '⬡',
+        swatchBg: 'linear-gradient(135deg, #ffe169, #d48c08)',
+        theme: 'gold',
+        // Rounded flat-top hexagon silhouette
+        path: 'M 118 42 L 282 42 Q 302 42 312 60 L 384 182 Q 394 200 384 218 L 312 340 Q 302 358 282 358 L 118 358 Q 98 358 88 340 L 16 218 Q 6 200 16 182 L 88 60 Q 98 42 118 42 Z',
+        ribYs: [110, 155, 200, 245, 290],
+        bubbles: (() => {
+          // Classic 3 - 4 - 5 - 4 - 3 hexagonal lattice
+          const rows = [
+            { count: 3, y: 88 },
+            { count: 4, y: 144 },
+            { count: 5, y: 200 },
+            { count: 4, y: 256 },
+            { count: 3, y: 312 }
+          ];
+          const spacing = 62;
+          const list = [];
+          rows.forEach(r => {
+            const startX = 200 - ((r.count - 1) * spacing) / 2;
+            for (let i = 0; i < r.count; i++) {
+              list.push({ x: startX + i * spacing, y: r.y, r: 23, color: 'gold' });
+            }
+          });
+          return list;
+        })()
+      },
+      {
+        id: 'square',
+        name: 'Emerald Square',
+        emoji: '🟩',
+        swatchBg: 'linear-gradient(135deg, #5ce67e, #158032)',
+        theme: 'green',
+        path: 'M 54 26 L 346 26 Q 374 26 374 54 L 374 346 Q 374 374 346 374 L 54 374 Q 26 374 26 346 L 26 54 Q 26 26 54 26 Z',
+        ribYs: [94, 147, 200, 253, 306],
+        bubbles: (() => {
+          const list = [];
+          const count = 6;
+          const start = 67;
+          const step = 53.2;
+          for (let row = 0; row < count; row++) {
+            for (let col = 0; col < count; col++) {
+              list.push({
+                x: start + col * step,
+                y: start + row * step,
+                r: 21.5,
+                color: 'green'
+              });
+            }
+          }
+          return list;
+        })()
+      },
+      {
+        id: 'duck',
+        name: 'Sunny Duck',
+        emoji: '🦆',
+        swatchBg: 'linear-gradient(135deg, #fff06b, #d9a404)',
+        theme: 'yellow',
+        // Cute rubber duck silhouette with beak on left and tail curve on right
+        path: `
+        M 145 56
+          C 198 56, 232 94, 224 146
+          C 221 164, 234 176, 256 174
+          C 295 170, 336 150, 362 142
+          C 378 137, 388 152, 380 172
+          C 365 215, 358 278, 308 318
+          C 264 352, 165 354, 114 322
+          C 68 292, 62 230, 88 186
+          C 98 168, 94 156, 76 152
+          L 36 144
+          C 18 140, 18 118, 36 112
+          L 82 98
+          C 96 72, 118 56, 145 56 Z
+        `,
+        ribYs: [130, 178, 224, 270, 312],
+        bubbles: [
+          // Head (2 rows)
+          { x: 132, y: 92, r: 17, color: 'yellow' },
+          { x: 174, y: 92, r: 17, color: 'yellow' },
+          { x: 118, y: 132, r: 17, color: 'yellow' },
+          { x: 158, y: 132, r: 17, color: 'yellow' },
+          { x: 196, y: 132, r: 17, color: 'yellow' },
+          // Upper body
+          { x: 120, y: 184, r: 18, color: 'yellow' },
+          { x: 164, y: 184, r: 18, color: 'yellow' },
+          { x: 208, y: 184, r: 18, color: 'yellow' },
+          { x: 326, y: 184, r: 17, color: 'yellow' },
+          // Mid body
+          { x: 108, y: 228, r: 18, color: 'yellow' },
+          { x: 152, y: 228, r: 18, color: 'yellow' },
+          { x: 196, y: 228, r: 18, color: 'yellow' },
+          { x: 240, y: 228, r: 18, color: 'yellow' },
+          { x: 284, y: 228, r: 18, color: 'yellow' },
+          { x: 326, y: 228, r: 17, color: 'yellow' },
+          // Lower body
+          { x: 118, y: 274, r: 18, color: 'yellow' },
+          { x: 162, y: 274, r: 18, color: 'yellow' },
+          { x: 206, y: 274, r: 18, color: 'yellow' },
+          { x: 250, y: 274, r: 18, color: 'yellow' },
+          { x: 294, y: 274, r: 18, color: 'yellow' },
+          // Bottom belly
+          { x: 148, y: 316, r: 17, color: 'yellow' },
+          { x: 192, y: 316, r: 17, color: 'yellow' },
+          { x: 236, y: 316, r: 17, color: 'yellow' },
+          { x: 278, y: 316, r: 16, color: 'yellow' }
+        ]
+      },
+      {
+        id: 'penguin',
+        name: 'Rainbow Penguin',
+        emoji: '🐧',
+        swatchBg: 'linear-gradient(180deg, #ff595e, #ffca3a, #8ac926, #1982c4, #b5179e)',
+        theme: 'rainbow',
+        // Cute chubby penguin silhouette with flippers & feet
+        path: `
+          M 200 32
+          C 262 32, 298 78, 304 142
+          L 372 214
+          C 386 228, 376 254, 354 252
+          L 310 246
+          C 312 282, 302 312, 286 326
+          L 304 344
+          C 316 356, 304 374, 282 374
+          L 228 374
+          C 214 374, 208 362, 200 362
+          C 192 362, 186 374, 172 374
+          L 118 374
+          C 96 374, 84 356, 96 344
+          L 114 326
+          C 98 312, 88 282, 90 246
+          L 46 252
+          C 24 254, 14 228, 28 214
+          L 96 142
+          C 102 78, 138 32, 200 32 Z
+        `,
+        stripeBounds: [30, 92, 146, 200, 254, 308, 380],
+        ribYs: [92, 146, 200, 254, 308],
+        bubbles: [
+          // Red top head
+          { x: 175, y: 68, r: 17, color: 'red' },
+          { x: 225, y: 68, r: 17, color: 'red' },
+          // Orange face
+          { x: 146, y: 120, r: 18, color: 'orange' },
+          { x: 200, y: 120, r: 18, color: 'orange' },
+          { x: 254, y: 120, r: 18, color: 'orange' },
+          // Yellow upper torso
+          { x: 122, y: 174, r: 18, color: 'yellow' },
+          { x: 174, y: 174, r: 18, color: 'yellow' },
+          { x: 226, y: 174, r: 18, color: 'yellow' },
+          { x: 278, y: 174, r: 18, color: 'yellow' },
+          // Green mid torso + flipper tips
+          { x: 72, y: 228, r: 17, color: 'green' },
+          { x: 136, y: 228, r: 18, color: 'green' },
+          { x: 200, y: 228, r: 18, color: 'green' },
+          { x: 264, y: 228, r: 18, color: 'green' },
+          { x: 328, y: 228, r: 17, color: 'green' },
+          // Blue lower belly
+          { x: 128, y: 282, r: 18, color: 'blue' },
+          { x: 176, y: 282, r: 18, color: 'blue' },
+          { x: 224, y: 282, r: 18, color: 'blue' },
+          { x: 272, y: 282, r: 18, color: 'blue' },
+          // Purple feet
+          { x: 144, y: 342, r: 18, color: 'purple' },
+          { x: 256, y: 342, r: 18, color: 'purple' }
+        ]
+      },
+      {
+        id: 'cupcake',
+        name: 'Rainbow Cupcake',
+        emoji: '🧁',
+        swatchBg: 'linear-gradient(180deg, #ff6ba8, #ffca3a, #4aa5f5, #c45be6)',
+        theme: 'rainbow',
+        // Frosted cupcake with swirl top and fluted wrapper base
+        path: `
+          M 218 26
+          C 226 48, 258 64, 286 88
+          C 312 110, 326 138, 318 164
+          C 338 176, 344 202, 328 222
+          L 296 346
+          C 291 364, 276 374, 256 374
+          L 144 374
+          C 124 374, 109 364, 104 346
+          L 72 222
+          C 56 202, 62 176, 82 164
+          C 74 132, 104 94, 148 76
+          C 172 66, 184 42, 198 26
+          C 205 18, 214 18, 218 26 Z
+        `,
+        stripeBounds: [20, 96, 152, 208, 262, 318, 380],
+        ribYs: [96, 152, 208, 262, 318],
+        bubbles: [
+          // Red swirl top
+          { x: 200, y: 68, r: 17, color: 'red' },
+          // Orange frosting
+          { x: 148, y: 124, r: 18, color: 'orange' },
+          { x: 200, y: 124, r: 18, color: 'orange' },
+          { x: 252, y: 124, r: 18, color: 'orange' },
+          // Yellow lower frosting
+          { x: 118, y: 180, r: 18, color: 'yellow' },
+          { x: 172, y: 180, r: 18, color: 'yellow' },
+          { x: 228, y: 180, r: 18, color: 'yellow' },
+          { x: 282, y: 180, r: 18, color: 'yellow' },
+          // Green wrapper top
+          { x: 118, y: 236, r: 18, color: 'green' },
+          { x: 172, y: 236, r: 18, color: 'green' },
+          { x: 228, y: 236, r: 18, color: 'green' },
+          { x: 282, y: 236, r: 18, color: 'green' },
+          // Blue wrapper mid
+          { x: 132, y: 290, r: 18, color: 'blue' },
+          { x: 178, y: 290, r: 18, color: 'blue' },
+          { x: 222, y: 290, r: 18, color: 'blue' },
+          { x: 268, y: 290, r: 18, color: 'blue' },
+          // Purple wrapper base
+          { x: 150, y: 344, r: 18, color: 'purple' },
+          { x: 200, y: 344, r: 18, color: 'purple' },
+          { x: 250, y: 344, r: 18, color: 'purple' }
+        ]
+      },
+      {
+        id: 'heart',
+        name: 'Sky Blue Heart',
+        emoji: '💙',
+        swatchBg: 'linear-gradient(135deg, #88c9ff, #1b63ab)',
+        theme: 'blue',
+        path: `
+          M 200 96
+          C 168 38, 86 34, 46 84
+          C 6 134, 24 208, 84 264
+          L 180 352
+          C 192 363, 208 363, 220 352
+          L 316 264
+          C 376 208, 394 134, 354 84
+          C 314 34, 232 38, 200 96 Z
+        `,
+        ribYs: [118, 168, 218, 268, 314],
+        bubbles: [
+          // Top lobes
+          { x: 102, y: 92, r: 19, color: 'blue' },
+          { x: 152, y: 92, r: 19, color: 'blue' },
+          { x: 248, y: 92, r: 19, color: 'blue' },
+          { x: 298, y: 92, r: 19, color: 'blue' },
+          // Row 2 (6 across)
+          { x: 75, y: 143, r: 19, color: 'blue' },
+          { x: 125, y: 143, r: 19, color: 'blue' },
+          { x: 175, y: 143, r: 19, color: 'blue' },
+          { x: 225, y: 143, r: 19, color: 'blue' },
+          { x: 275, y: 143, r: 19, color: 'blue' },
+          { x: 325, y: 143, r: 19, color: 'blue' },
+          // Row 3 (5 across)
+          { x: 100, y: 194, r: 19, color: 'blue' },
+          { x: 150, y: 194, r: 19, color: 'blue' },
+          { x: 200, y: 194, r: 19, color: 'blue' },
+          { x: 250, y: 194, r: 19, color: 'blue' },
+          { x: 300, y: 194, r: 19, color: 'blue' },
+          // Row 4 (3 across)
+          { x: 145, y: 245, r: 19, color: 'blue' },
+          { x: 200, y: 245, r: 19, color: 'blue' },
+          { x: 255, y: 245, r: 19, color: 'blue' },
+          // Row 5 (1 tip)
+          { x: 200, y: 298, r: 19, color: 'blue' }
+        ]
+      },
+      {
+        id: 'circle',
+        name: 'Lavender Circle',
+        emoji: '🟣',
+        swatchBg: 'linear-gradient(135deg, #e496ff, #792199)',
+        theme: 'purple',
+        path: 'M 200 22 A 178 178 0 1 1 199.9 22 Z',
+        ribYs: [96, 148, 200, 252, 304],
+        bubbles: (() => {
+          // 3 - 5 - 6 - 5 - 3 circle layout
+          const rows = [
+            { count: 3, y: 70 },
+            { count: 5, y: 122 },
+            { count: 6, y: 174 },
+            { count: 6, y: 226 },
+            { count: 5, y: 278 },
+            { count: 3, y: 330 }
+          ];
+          const spacing = 52;
+          const list = [];
+          rows.forEach(r => {
+            const startX = 200 - ((r.count - 1) * spacing) / 2;
+            for (let i = 0; i < r.count; i++) {
+              list.push({ x: startX + i * spacing, y: r.y, r: 20, color: 'purple' });
+            }
+          });
+          return list;
+        })()
+      },
+      {
+        id: 'butterfly',
+        name: 'Pastel Butterfly',
+        emoji: '🦋',
+        swatchBg: 'linear-gradient(135deg, #ff6ba8, #ff8e2b, #c45be6)',
+        theme: 'pink',
+        // Symmetrical rounded butterfly wings
+        path: `
+          M 200 94
+          C 226 42, 326 24, 366 78
+          C 394 116, 376 174, 336 198
+          C 372 222, 382 286, 344 326
+          C 306 364, 232 344, 200 302
+          C 168 344, 94 364, 56 326
+          C 18 286, 28 222, 64 198
+          C 24 174, 6 116, 34 78
+          C 74 24, 174 42, 200 94 Z
+        `,
+        ribYs: [130, 198, 266],
+        bubbles: [
+          // Upper wings
+          { x: 96, y: 94, r: 19, color: 'pink' },
+          { x: 148, y: 102, r: 18, color: 'orange' },
+          { x: 252, y: 102, r: 18, color: 'orange' },
+          { x: 304, y: 94, r: 19, color: 'pink' },
+
+          { x: 74, y: 148, r: 19, color: 'pink' },
+          { x: 128, y: 154, r: 19, color: 'yellow' },
+          { x: 200, y: 152, r: 17, color: 'purple' },
+          { x: 272, y: 154, r: 19, color: 'yellow' },
+          { x: 326, y: 148, r: 19, color: 'pink' },
+
+          // Center body + mid wings
+          { x: 112, y: 206, r: 18, color: 'orange' },
+          { x: 200, y: 202, r: 17, color: 'purple' },
+          { x: 288, y: 206, r: 18, color: 'orange' },
+
+          // Lower wings
+          { x: 78, y: 258, r: 19, color: 'pink' },
+          { x: 132, y: 258, r: 19, color: 'yellow' },
+          { x: 200, y: 252, r: 17, color: 'purple' },
+          { x: 268, y: 258, r: 19, color: 'yellow' },
+          { x: 322, y: 258, r: 19, color: 'pink' },
+
+          { x: 104, y: 310, r: 18, color: 'pink' },
+          { x: 296, y: 310, r: 18, color: 'pink' }
+        ]
+      }
+    ];
+
+    /**
+     * =========================================================================
+     * 5. GAME STATE & SVG RENDERING ENGINE
+     * =========================================================================
+     */
+    const state = {
+      currentLevelIdx: 0,
+      poppedSet: new Set(),
+      isTransitioning: false,
+      isPointerDown: false,
+      dragMode: null, // 'pop' or 'unpop' based on first bubble touched in a stroke
+      hapticsEnabled: true,
+      autoNextEnabled: true,
+      customRandomLevel: null
+    };
+
+    const toyWrapper = document.getElementById('toy-wrapper');
+    const toySvg = document.getElementById('toy-svg');
+    const levelTitleEl = document.getElementById('level-title');
+    const progressTextEl = document.getElementById('progress-text');
+
+    function getCurrentLevel() {
+      return state.customRandomLevel || LEVELS[state.currentLevelIdx];
+    }
+
+    /**
+     * Builds reusable SVG <defs> for 3D silicone bevels, shadows, and convex/concave bubble gradients
+     */
+    function createSvgDefs(level) {
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+
+      // 3D Silicone body inner bevel & drop shadow filter
+      defs.innerHTML = `
+        <filter id="silicone3D" x="-15%" y="-15%" width="130%" height="130%">
+          <!-- Top-left glossy highlight -->
+          <feOffset dx="0" dy="5" in="SourceAlpha" result="offTop"/>
+          <feGaussianBlur stdDeviation="4" in="offTop" result="blurTop"/>
+          <feComposite in="SourceAlpha" in2="blurTop" operator="out" result="innerTop"/>
+          <feFlood flood-color="#ffffff" flood-opacity="0.48" result="colorTop"/>
+          <feComposite in="colorTop" in2="innerTop" operator="in" result="highlight"/>
+
+          <!-- Bottom-right deep silicone shadow -->
+          <feOffset dx="0" dy="-6" in="SourceAlpha" result="offBot"/>
+          <feGaussianBlur stdDeviation="5" in="offBot" result="blurBot"/>
+          <feComposite in="SourceAlpha" in2="blurBot" operator="out" result="innerBot"/>
+          <feFlood flood-color="#1a0900" flood-opacity="0.45" result="colorBot"/>
+          <feComposite in="colorBot" in2="innerBot" operator="in" result="shadow"/>
+
+          <feMerge>
+            <feMergeNode in="SourceGraphic"/>
+            <feMergeNode in="highlight"/>
+            <feMergeNode in="shadow"/>
+          </feMerge>
+        </filter>
+        <clipPath id="toyClip">
+          <path d="${level.path}" />
+        </clipPath>
+      `;
+
+      // Generate radial gradients for every color palette (Convex unpopped vs Concave popped)
+      Object.entries(PALETTES).forEach(([key, pal]) => {
+        // Unpopped (Convex dome sticking up toward viewer)
+        const gradUp = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
+        gradUp.setAttribute('id', `grad-up-${key}`);
+        gradUp.setAttribute('cx', '36%');
+        gradUp.setAttribute('cy', '30%');
+        gradUp.setAttribute('r', '68%');
+        gradUp.innerHTML = `
+          <stop offset="0%" stop-color="${pal.light}" />
+          <stop offset="52%" stop-color="${pal.base}" />
+          <stop offset="86%" stop-color="${pal.dark}" />
+          <stop offset="100%" stop-color="${pal.deep}" />
+        `;
+        defs.appendChild(gradUp);
+
+        // Popped (Concave dimple pressed inward with top shadow & bottom rim catchlight)
+        const gradDown = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
+        gradDown.setAttribute('id', `grad-down-${key}`);
+        gradDown.setAttribute('cx', '50%');
+        gradDown.setAttribute('cy', '66%');
+        gradDown.setAttribute('r', '62%');
+        gradDown.innerHTML = `
+          <stop offset="0%" stop-color="${pal.mid}" />
+          <stop offset="58%" stop-color="${pal.dark}" />
+          <stop offset="90%" stop-color="${pal.deep}" />
+          <stop offset="100%" stop-color="${pal.deep}" />
+        `;
+        defs.appendChild(gradDown);
+
+        // Body base linear gradient
+        const bodyGrad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+        bodyGrad.setAttribute('id', `body-${key}`);
+        bodyGrad.setAttribute('x1', '0%');
+        bodyGrad.setAttribute('y1', '0%');
+        bodyGrad.setAttribute('x2', '15%');
+        bodyGrad.setAttribute('y2', '100%');
+        bodyGrad.innerHTML = `
+          <stop offset="0%" stop-color="${pal.light}" />
+          <stop offset="45%" stop-color="${pal.base}" />
+          <stop offset="100%" stop-color="${pal.dark}" />
+        `;
+        defs.appendChild(bodyGrad);
+      });
+
+      return defs;
+    }
+
+    /**
+     * Renders the active Pop It toy completely into SVG
+     */
+    function renderToy() {
+      const level = getCurrentLevel();
+      state.poppedSet.clear();
+      toySvg.innerHTML = '';
+
+      toySvg.appendChild(createSvgDefs(level));
+
+      // 1. Thick 3D Extruded Silicone Rim Under-layer
+      const extrudeLayer = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      extrudeLayer.setAttribute('d', level.path);
+      extrudeLayer.setAttribute('transform', 'translate(0, 9)');
+      const darkRimColor = level.theme === 'rainbow' ? '#3d1559' : PALETTES[level.theme].deep;
+      extrudeLayer.setAttribute('fill', darkRimColor);
+      toySvg.appendChild(extrudeLayer);
+
+      // 2. Main Silicone Body Group with 3D Bevel Filter
+      const bodyGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      bodyGroup.setAttribute('filter', 'url(#silicone3D)');
+
+      if (level.theme === 'rainbow' && level.stripeBounds) {
+        // Clip rainbow horizontal stripes to the toy silhouette
+        const clippedGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        clippedGroup.setAttribute('clip-path', 'url(#toyClip)');
+
+        for (let i = 0; i < RAINBOW_STRIPE_KEYS.length; i++) {
+          const key = RAINBOW_STRIPE_KEYS[i];
+          const yTop = level.stripeBounds[i];
+          const yBot = level.stripeBounds[i + 1];
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', '0');
+          rect.setAttribute('y', yTop);
+          rect.setAttribute('width', '400');
+          rect.setAttribute('height', yBot - yTop + 1);
+          rect.setAttribute('fill', `url(#body-${key})`);
+          clippedGroup.appendChild(rect);
+        }
+        bodyGroup.appendChild(clippedGroup);
+
+        // Subtle outer border stroke for rainbow silhouette
+        const outline = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        outline.setAttribute('d', level.path);
+        outline.setAttribute('fill', 'none');
+        outline.setAttribute('stroke', 'rgba(255,255,255,0.28)');
+        outline.setAttribute('stroke-width', '3');
+        bodyGroup.appendChild(outline);
+      } else {
+        const mainPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        mainPath.setAttribute('d', level.path);
+        mainPath.setAttribute('fill', `url(#body-${level.theme})`);
+        bodyGroup.appendChild(mainPath);
+      }
+
+      // 3. Structural Silicone Divider Ribs (like authentic Pop It ridges)
+      if (level.ribYs) {
+        const ribsGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        ribsGroup.setAttribute('clip-path', 'url(#toyClip)');
+        level.ribYs.forEach(ry => {
+          const shadowLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          shadowLine.setAttribute('x1', '0');
+          shadowLine.setAttribute('y1', ry - 1.5);
+          shadowLine.setAttribute('x2', '400');
+          shadowLine.setAttribute('y2', ry - 1.5);
+          shadowLine.setAttribute('stroke', 'rgba(0, 0, 0, 0.24)');
+          shadowLine.setAttribute('stroke-width', '2.5');
+
+          const lightLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          lightLine.setAttribute('x1', '0');
+          lightLine.setAttribute('y1', ry + 1.2);
+          lightLine.setAttribute('x2', '400');
+          lightLine.setAttribute('y2', ry + 1.2);
+          lightLine.setAttribute('stroke', 'rgba(255, 255, 255, 0.24)');
+          lightLine.setAttribute('stroke-width', '2');
+
+          ribsGroup.appendChild(shadowLine);
+          ribsGroup.appendChild(lightLine);
+        });
+        bodyGroup.appendChild(ribsGroup);
+      }
+
+      toySvg.appendChild(bodyGroup);
+
+      // 4. Interactive Bubbles Layer
+      const bubblesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      level.bubbles.forEach((b, idx) => {
+        const pal = PALETTES[b.color] || PALETTES.gold;
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'pop-bubble');
+        g.setAttribute('data-idx', idx);
+        g.setAttribute('transform', `translate(${b.x}, ${b.y})`);
+
+        // Outer silicone socket ring
+        const socket = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        socket.setAttribute('r', b.r + 3.2);
+        socket.setAttribute('fill', pal.deep);
+        socket.setAttribute('opacity', '0.72');
+
+        // Main bubble dome / cavity
+        const dome = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dome.setAttribute('class', 'bubble-dome');
+        dome.setAttribute('r', b.r);
+        dome.setAttribute('fill', `url(#grad-up-${b.color})`);
+        dome.setAttribute('stroke', pal.rim);
+        dome.setAttribute('stroke-width', '1.4');
+
+        // Specular silicone highlight crescent (visible when unpopped)
+        const gloss = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+        gloss.setAttribute('class', 'bubble-gloss');
+        gloss.setAttribute('cx', -b.r * 0.32);
+        gloss.setAttribute('cy', -b.r * 0.34);
+        gloss.setAttribute('rx', b.r * 0.32);
+        gloss.setAttribute('ry', b.r * 0.18);
+        gloss.setAttribute('transform', `rotate(-32 ${-b.r * 0.32} ${-b.r * 0.34})`);
+        gloss.setAttribute('fill', '#ffffff');
+        gloss.setAttribute('opacity', '0.45');
+
+        // Concave inner rim shadow (visible when popped)
+        const innerShadow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        innerShadow.setAttribute('class', 'bubble-concave-shadow');
+        const ir = b.r * 0.84;
+        innerShadow.setAttribute('d', `M ${-ir} 0 A ${ir} ${ir} 0 0 1 ${ir} 0 A ${ir} ${ir * 0.65} 0 0 0 ${-ir} 0 Z`);
+        innerShadow.setAttribute('fill', 'rgba(0, 0, 0, 0.35)');
+        innerShadow.setAttribute('opacity', '0');
+
+        g.appendChild(socket);
+        g.appendChild(dome);
+        g.appendChild(gloss);
+        g.appendChild(innerShadow);
+        bubblesGroup.appendChild(g);
+      });
+      toySvg.appendChild(bubblesGroup);
+      updateHUD();
+    }
+
+    /**
+     * Updates visual state of a single bubble & triggers ASMR feedback
+     */
+    function setBubblePopped(idx, shouldPop) {
+      const level = getCurrentLevel();
+      if (idx < 0 || idx >= level.bubbles.length) return;
+
+      const currentlyPopped = state.poppedSet.has(idx);
+      if (currentlyPopped === shouldPop) return;
+
+      const b = level.bubbles[idx];
+      const pal = PALETTES[b.color] || PALETTES.gold;
+      const bubbleEl = toySvg.querySelector(`.pop-bubble[data-idx="${idx}"]`);
+      if (!bubbleEl) return;
+
+      const dome = bubbleEl.querySelector('.bubble-dome');
+      const gloss = bubbleEl.querySelector('.bubble-gloss');
+      const concaveShadow = bubbleEl.querySelector('.bubble-concave-shadow');
+
+      if (shouldPop) {
+        state.poppedSet.add(idx);
+        dome.setAttribute('fill', `url(#grad-down-${b.color})`);
+        dome.setAttribute('stroke', pal.deep);
+        gloss.setAttribute('opacity', '0');
+        concaveShadow.setAttribute('opacity', '1');
+        audio.playPop(false);
+      } else {
+        state.poppedSet.delete(idx);
+        dome.setAttribute('fill', `url(#grad-up-${b.color})`);
+        dome.setAttribute('stroke', pal.rim);
+        gloss.setAttribute('opacity', '0.45');
+        concaveShadow.setAttribute('opacity', '0');
+        audio.playPop(true);
+      }
+
+      // Micro spring animation
+      bubbleEl.classList.remove('popping-anim');
+      void bubbleEl.offsetWidth; // Force reflow
+      bubbleEl.classList.add('popping-anim');
+
+      // Subtle mobile haptic vibration
+      if (state.hapticsEnabled && navigator.vibrate) {
+        try { navigator.vibrate(14); } catch (e) {}
+      }
+
+      updateHUD();
+      checkLevelCompletion();
+    }
+
+    function updateHUD() {
+      const level = getCurrentLevel();
+      const total = level.bubbles.length;
+      const count = state.poppedSet.size;
+      const labelNum = state.customRandomLevel ? '★' : `${state.currentLevelIdx + 1}.`;
+      levelTitleEl.textContent = `${labelNum} ${level.name}`;
+      progressTextEl.textContent = `${count} / ${total} Popped`;
+    }
+
+    /**
+     * Checks if 100% of bubbles are popped -> Confetti + Chime + Auto-slide next shape
+     */
+    function checkLevelCompletion() {
+      const level = getCurrentLevel();
+      if (state.poppedSet.size === level.bubbles.length && !state.isTransitioning) {
+        state.isTransitioning = true;
+        audio.playCompletionChime();
+        launchConfetti();
+
+        if (state.autoNextEnabled) {
+          setTimeout(() => {
+            advanceToNextLevel();
+          }, 1150);
+        } else {
+          state.isTransitioning = false;
+        }
+      }
+    }
+
+    /**
+     * Smoothly slides current toy off-screen to the left and slides next shape in from right
+     */
+    function advanceToNextLevel(specificIndex = null, customLevel = null) {
+      toyWrapper.classList.add('slide-out-left');
+
+      setTimeout(() => {
+        if (customLevel) {
+          state.customRandomLevel = customLevel;
+        } else if (specificIndex !== null) {
+          state.customRandomLevel = null;
+          state.currentLevelIdx = specificIndex;
+        } else {
+          state.customRandomLevel = null;
+          state.currentLevelIdx = (state.currentLevelIdx + 1) % LEVELS.length;
+        }
+
+        renderToy();
+        updateLevelPickerSelection();
+
+        toyWrapper.classList.remove('slide-out-left');
+        toyWrapper.classList.add('slide-in-right');
+        void toyWrapper.offsetWidth;
+
+        requestAnimationFrame(() => {
+          toyWrapper.classList.remove('slide-in-right');
+          state.isTransitioning = false;
+        });
+      }, 460);
+    }
+
+    /**
+     * Flips the toy over (resets all bubbles with a rapid cascade pop wave!)
+     */
+    function flipToyCascade() {
+      const level = getCurrentLevel();
+      if (state.poppedSet.size === 0) {
+        // If already unpopped, pop them all in a relaxing wave!
+        level.bubbles.forEach((_, idx) => {
+          setTimeout(() => setBubblePopped(idx, true), idx * 18);
+        });
+      } else {
+        // Unpop all popped bubbles in a soothing wave
+        const poppedIndices = Array.from(state.poppedSet).sort((a, b) => a - b);
+        poppedIndices.forEach((idx, i) => {
+          setTimeout(() => setBubblePopped(idx, false), i * 16);
+        });
+      }
+    }
+
+    /**
+     * Generates a surprise relaxing pattern (Diamond / Flower / Starburst)
+     */
+    function generateSurprisePattern() {
+      const themes = ['gold', 'green', 'blue', 'purple', 'pink', 'rainbow'];
+      const chosenTheme = themes[Math.floor(Math.random() * themes.length)];
+      const shapes = [
+        {
+          name: 'Relaxing Diamond',
+          path: 'M 200 20 L 380 200 L 200 380 L 20 200 Z',
+          ribYs: [110, 155, 200, 245, 290],
+          rows: [
+            { count: 1, y: 86 },
+            { count: 3, y: 143 },
+            { count: 5, y: 200 },
+            { count: 3, y: 257 },
+            { count: 1, y: 314 }
+          ]
+        },
+        {
+          name: 'Cozy Octagon',
+          path: 'M 130 28 L 270 28 L 372 130 L 372 270 L 270 372 L 130 372 L 28 270 L 28 130 Z',
+          ribYs: [112, 156, 200, 244, 288],
+          rows: [
+            { count: 3, y: 88 },
+            { count: 5, y: 144 },
+            { count: 5, y: 200 },
+            { count: 5, y: 256 },
+            { count: 3, y: 312 }
+          ]
+        }
+      ];
+
+      const pick = shapes[Math.floor(Math.random() * shapes.length)];
+      const bubbles = [];
+      pick.rows.forEach((r, rIdx) => {
+        const spacing = 54;
+        const startX = 200 - ((r.count - 1) * spacing) / 2;
+        const rowColor = chosenTheme === 'rainbow'
+          ? RAINBOW_STRIPE_KEYS[rIdx % RAINBOW_STRIPE_KEYS.length]
+          : chosenTheme;
+        for (let i = 0; i < r.count; i++) {
+          bubbles.push({ x: startX + i * spacing, y: r.y, r: 21, color: rowColor });
+        }
+      });
+
+      return {
+        id: 'random',
+        name: pick.name,
+        theme: chosenTheme,
+        path: pick.path,
+        stripeBounds: [20, 115, 170, 228, 284, 340, 385],
+        ribYs: pick.ribYs,
+        bubbles
+      };
+    }
+
+    /**
+    * =========================================================================
+     * 6. CONTINUOUS SLIDE-TO-POP & TAP POINTER HANDLING (TOUCH + MOUSE)
+     * =========================================================================
+     */
+    function findBubbleAtPoint(clientX, clientY) {
+      const el = document.elementFromPoint(clientX, clientY);
+      if (!el) return null;
+      const bubbleGroup = el.closest('.pop-bubble');
+      if (!bubbleGroup) return null;
+      return parseInt(bubbleGroup.getAttribute('data-idx'), 10);
+    }
+
+    toySvg.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      audio.init();
+      state.isPointerDown = true;
+
+      const idx = findBubbleAtPoint(e.clientX, e.clientY);
+      if (idx !== null && !Number.isNaN(idx)) {
+        // Toggle the first tapped bubble; subsequent dragged bubbles match this action
+        const willPop = !state.poppedSet.has(idx);
+        state.dragMode = willPop ? 'pop' : 'unpop';
+        setBubblePopped(idx, willPop);
+      } else {
+        state.dragMode = 'pop';
+      }
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!state.isPointerDown) return;
+      const idx = findBubbleAtPoint(e.clientX, e.clientY);
+      if (idx !== null && !Number.isNaN(idx)) {
+        setBubblePopped(idx, state.dragMode === 'pop');
+      }
+    });
+
+    window.addEventListener('pointerup', () => {
+      state.isPointerDown = false;
+      state.dragMode = null;
+    });
+
+    window.addEventListener('pointercancel', () => {
+      state.isPointerDown = false;
+      state.dragMode = null;
+    });
+
+    /**
+     * =========================================================================
+     * 7. MODALS, SETTINGS & UI CONTROLS
+     * =========================================================================
+     */
+    const homeModal = document.getElementById('home-modal');
+    const settingsModal = document.getElementById('settings-modal');
+    const levelsGrid = document.getElementById('levels-grid');
+
+    function populateLevelPicker() {
+      levelsGrid.innerHTML = '';
+
+      LEVELS.forEach((lvl, idx) => {
+        const card = document.createElement('div');
+        card.className = `level-card ${idx === state.currentLevelIdx && !state.customRandomLevel ? 'active' : ''}`;
+        card.innerHTML = `
+          <div class="level-swatch" style="background: ${lvl.swatchBg};">${lvl.emoji}</div>
+          <span class="level-card-name">${idx + 1}. ${lvl.name}</span>
+        `;
+        card.addEventListener('click', () => {
+          homeModal.classList.remove('open');
+          advanceToNextLevel(idx, null);
+        });
+        levelsGrid.appendChild(card);
+      });
+
+      // Add Surprise Random Pattern Generator Card
+      const randomCard = document.createElement('div');
+      randomCard.className = 'level-card';
+      randomCard.innerHTML = `
+        <div class="level-swatch" style="background: linear-gradient(135deg, #ff9f1c, #ff595e, #4cc9f0);">✨</div>
+        <span class="level-card-name">Surprise Pattern</span>
+      `;
+      randomCard.addEventListener('click', () => {
+        homeModal.classList.remove('open');
+        advanceToNextLevel(null, generateSurprisePattern());
+      });
+      levelsGrid.appendChild(randomCard);
+    }
+
+    function updateLevelPickerSelection() {
+      const cards = levelsGrid.querySelectorAll('.level-card');
+      cards.forEach((c, idx) => {
+        if (idx === state.currentLevelIdx && !state.customRandomLevel) {
+          c.classList.add('active');
+        } else {
+          c.classList.remove('active');
+        }
+      });
+    }
+
+    document.getElementById('btn-home').addEventListener('click', () => {
+      populateLevelPicker();
+      homeModal.classList.add('open');
+    });
+
+    document.getElementById('level-pill').addEventListener('click', () => {
+      populateLevelPicker();
+      homeModal.classList.add('open');
+    });
+
+    document.getElementById('btn-settings').addEventListener('click', () => {
+      settingsModal.classList.add('open');
+    });
+
+    document.querySelectorAll('[data-close]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById(btn.getAttribute('data-close')).classList.remove('open');
+      });
+    });
+
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+          backdrop.classList.remove('open');
+        }
+      });
+    });
+
+    // Settings Toggles
+    function bindToggle(id, initial, onChange) {
+      const el = document.getElementById(id);
+      let val = initial;
+      el.classList.toggle('on', val);
+      el.addEventListener('click', () => {
+        val = !val;
+        el.classList.toggle('on', val);
+        onChange(val);
+      });
+    }
+
+    bindToggle('toggle-sound', true, (v) => { audio.soundEnabled = v; });
+    bindToggle('toggle-haptics', true, (v) => { state.hapticsEnabled = v; });
+    bindToggle('toggle-autonext', true, (v) => { state.autoNextEnabled = v; });
+    bindToggle('toggle-ambient', false, (v) => { audio.toggleAmbient(v); });
+
+    // Bottom Buttons
+    document.getElementById('btn-flip').addEventListener('click', () => {
+      audio.init();
+      flipToyCascade();
+    });
+
+    document.getElementById('btn-next').addEventListener('click', () => {
+      if (state.isTransitioning) return;
+      state.isTransitioning = true;
+      audio.init();
+      advanceToNextLevel();
+    });
+
+    // Initial Load & Friendly Hint
+    window.addEventListener('load', () => {
+      renderToy();
+      const toast = document.getElementById('toast-hint');
+      setTimeout(() => toast.classList.add('show'), 400);
+      setTimeout(() => toast.classList.remove('show'), 4200);
+    });
+  </script>
+</body>
+</html>
