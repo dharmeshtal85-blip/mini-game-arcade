@@ -4,9 +4,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2048 Puzzle - Crazy Mini Games</title>
-<meta name="description" content="Play 2048 Puzzle online for free. Merge matching numbers, reach 2048 and beat your high score.">
-  <!-- Google Analytics -->
+
+<title>Play 2048 Puzzle Online Free | Crazy Mini Games</title>
+
+<meta name="description" content="Play 2048 Puzzle online for free. Merge matching number tiles, reach 2048 and beat your high score in this fun brain game.">
+
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#faf8ef">
+
+<link rel="canonical" href="https://fruit-slice-arcade-amber.vercel.app/2048.html">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Play 2048 Puzzle Online Free">
+<meta property="og:description" content="Merge matching numbers, reach 2048 and beat your high score. Play free online!">
+<meta property="og:url" content="https://fruit-slice-arcade-amber.vercel.app/2048.html">
+<meta property="og:site_name" content="Crazy Mini Games">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Play 2048 Puzzle Online Free">
+<meta name="twitter:description" content="Play the free 2048 number puzzle game online.">
+
+<!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-7NBXEQ3G88"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
@@ -14,57 +34,381 @@ function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', 'G-7NBXEQ3G88');
 </script>
+
+<!-- Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "2048 Puzzle",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Any",
+  "genre": "Puzzle",
+  "description": "Play 2048 Puzzle online for free. Merge matching numbers and reach the 2048 tile.",
+  "url": "https://fruit-slice-arcade-amber.vercel.app/2048.html",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "INR"
+  }
+}
+</script>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#faf8ef;color:#776e65;font-family:Arial,sans-serif;text-align:center;padding:18px}
+
+body{
+ margin:0;
+ background:#faf8ef;
+ color:#776e65;
+ font-family:Arial,sans-serif;
+ text-align:center;
+ padding:18px;
+}
+
 h1{font-size:42px;margin:12px 0}
-p{line-height:1.5}
-.top{display:flex;justify-content:center;gap:12px;align-items:center;flex-wrap:wrap}
-.score{background:#bbada0;color:white;padding:10px 18px;border-radius:8px;font-weight:bold}
-button{border:0;border-radius:7px;background:#8f7a66;color:white;padding:12px 20px;font-size:16px;font-weight:bold;cursor:pointer}
-#board{width:min(92vw,420px);aspect-ratio:1;margin:22px auto;background:#bbada0;padding:10px;border-radius:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;touch-action:none}
-.cell{background:#cdc1b4;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:clamp(20px,7vw,34px);font-weight:bold}
-.v2{background:#eee4da}.v4{background:#ede0c8}.v8{background:#f2b179;color:white}.v16{background:#f59563;color:white}.v32{background:#f67c5f;color:white}.v64{background:#f65e3b;color:white}.v128,.v256,.v512{background:#edcf72;color:white;font-size:26px}.v1024,.v2048{background:#edc53f;color:white;font-size:22px}
-#message{font-weight:bold;min-height:24px}
-.instructions{max-width:520px;margin:30px auto;text-align:left;background:white;padding:18px;border-radius:10px;line-height:1.7}
-footer{margin:30px 0;font-size:14px}
+h2{font-size:23px}
+p{line-height:1.6}
+
+.top{
+ display:flex;
+ justify-content:center;
+ gap:12px;
+ align-items:center;
+ flex-wrap:wrap;
+}
+
+.score{
+ background:#bbada0;
+ color:white;
+ padding:10px 18px;
+ border-radius:8px;
+ font-weight:bold;
+}
+
+button{
+ border:0;
+ border-radius:7px;
+ background:#8f7a66;
+ color:white;
+ padding:12px 20px;
+ font-size:16px;
+ font-weight:bold;
+ cursor:pointer;
+}
+
+button:focus-visible{
+ outline:3px solid #edc53f;
+ outline-offset:3px;
+}
+
+#board{
+ width:min(92vw,420px);
+ aspect-ratio:1;
+ margin:22px auto;
+ background:#bbada0;
+ padding:10px;
+ border-radius:10px;
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:10px;
+ touch-action:none;
+}
+
+.cell{
+ background:#cdc1b4;
+ border-radius:6px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ font-size:clamp(20px,7vw,34px);
+ font-weight:bold;
+ min-width:0;
+}
+
+.v2{background:#eee4da}
+.v4{background:#ede0c8}
+.v8{background:#f2b179;color:white}
+.v16{background:#f59563;color:white}
+.v32{background:#f67c5f;color:white}
+.v64{background:#f65e3b;color:white}
+.v128,.v256,.v512{
+ background:#edcf72;
+ color:white;
+ font-size:26px;
+}
+.v1024,.v2048{
+ background:#edc53f;
+ color:white;
+ font-size:22px;
+}
+
+#message{
+ font-weight:bold;
+ min-height:28px;
+}
+
+.instructions{
+ max-width:520px;
+ margin:30px auto;
+ text-align:left;
+ background:white;
+ padding:18px;
+ border-radius:10px;
+ line-height:1.7;
+}
+
+.faq{
+ max-width:520px;
+ margin:20px auto;
+ padding:18px;
+ text-align:left;
+ background:white;
+ border-radius:10px;
+}
+
+footer{
+ margin:30px 0;
+ font-size:14px;
+}
+
 a{color:#776e65}
+
+@media(max-width:380px){
+ body{padding:10px}
+ #board{gap:7px;padding:7px}
+ h1{font-size:36px}
+}
 </style>
 </head>
+
 <body>
-<h1>2048</h1>
+
+<header>
+<h1>2048 Puzzle</h1>
 <p>Join the numbers and reach the 2048 tile!</p>
+</header>
+
+<main>
+
 <div class="top">
-<div class="score">Score: <span id="score">0</span></div>
-<div class="score">Best: <span id="best">0</span></div>
-<button onclick="restart()">New Game</button>
+ <div class="score">Score: <span id="score">0</span></div>
+ <div class="score">Best: <span id="best">0</span></div>
+ <button type="button" onclick="restart()">New Game</button>
 </div>
-<div id="board"></div>
-<div id="message">Use arrow keys or swipe to play.</div>
+
+<div id="board" role="grid" aria-label="2048 game board"></div>
+
+<p id="message" aria-live="polite">
+Use arrow keys or swipe to play.
+</p>
+
 <section class="instructions">
 <h2>How to Play 2048</h2>
+
 <p>1. Swipe or use arrow keys to move all tiles.</p>
 <p>2. When two tiles with the same number touch, they merge into one.</p>
-<p>3. Every move adds a new tile.</p>
+<p>3. Every valid move adds a new tile.</p>
 <p>4. Reach the 2048 tile to win. Keep playing to beat your high score!</p>
+
 <h2>Game Tips</h2>
 <p>Keep your largest tile in a corner. Avoid moving in random directions and plan each move carefully.</p>
 </section>
-<footer>Part of <a href="index.html">Crazy Mini Games</a></footer>
+
+<section class="faq">
+<h2>Frequently Asked Questions</h2>
+
+<h3>Is 2048 free to play?</h3>
+<p>Yes. You can play this 2048 puzzle game online for free.</p>
+
+<h3>How do you win 2048?</h3>
+<p>Merge matching number tiles until you create a tile with the number 2048.</p>
+
+<h3>Can I play 2048 on mobile?</h3>
+<p>Yes. Swipe in any direction on the game board to move the tiles.</p>
+</section>
+
+</main>
+
+<footer>
+Part of <a href="index.html">Crazy Mini Games</a>
+</footer>
+
 <script>
-let grid,score=0,best=Number(localStorage.getItem("2048best")||0),over=false,won=false;
+"use strict";
+
+let grid;
+let score=0;
+let best=0;
+let over=false;
+let won=false;
+
 const board=document.getElementById("board");
-function restart(){grid=Array.from({length:4},()=>Array(4).fill(0));score=0;over=false;won=false;document.getElementById("message").textContent="Use arrow keys or swipe to play.";addTile();addTile();draw()}
-function addTile(){let empty=[];grid.forEach((r,y)=>r.forEach((v,x)=>{if(!v)empty.push([y,x])}));if(empty.length){let [y,x]=empty[Math.floor(Math.random()*empty.length)];grid[y][x]=Math.random()<.9?2:4}}
-function draw(){board.innerHTML="";grid.flat().forEach(v=>{let d=document.createElement("div");d.className="cell "+(v?"v"+v:"");d.textContent=v||"";board.appendChild(d)});document.getElementById("score").textContent=score;document.getElementById("best").textContent=best}
-function move(dir){if(over)return;let old=JSON.stringify(grid);for(let i=0;i<4;i++){let line=[];for(let j=0;j<4;j++){let y=dir==="up"?j:dir==="down"?3-j:i;let x=dir==="left"?j:dir==="right"?3-j:i;line.push(grid[y][x])}line=line.filter(v=>v);for(let j=0;j<line.length-1;j++){if(line[j]===line[j+1]){line[j]*=2;score+=line[j];line.splice(j+1,1);if(line[j]===2048&&!won){won=true;document.getElementById("message").textContent="You reached 2048! Keep playing!"}}}while(line.length<4)line.push(0);for(let j=0;j<4;j++){let y=dir==="up"?j:dir==="down"?3-j:i;let x=dir==="left"?j:dir==="right"?3-j:i;grid[y][x]=line[j]}}
-if(old!==JSON.stringify(grid)){addTile();if(score>best){best=score;localStorage.setItem("2048best",best)}draw();if(!canMove()){over=true;document.getElementById("message").textContent="Game Over! Tap New Game to try again."}}}
-function canMove(){for(let y=0;y<4;y++)for(let x=0;x<4;x++){if(!grid[y][x])return true;if(x<3&&grid[y][x]===grid[y][x+1])return true;if(y<3&&grid[y][x]===grid[y+1][x])return true}return false}
-document.addEventListener("keydown",e=>{let m={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right"};if(m[e.key]){e.preventDefault();move(m[e.key])}});
-let sx=0,sy=0;
-board.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
-board.addEventListener("touchend",e=>{let dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<25)return;move(Math.abs(dx)>Math.abs(dy)?(dx>0?"right":"left"):(dy>0?"down":"up"))},{passive:true});
+const scoreEl=document.getElementById("score");
+const bestEl=document.getElementById("best");
+const message=document.getElementById("message");
+
+function safeGetBest(){
+ try{
+  return Number(localStorage.getItem("2048best")||0)||0;
+ }catch(e){
+  return 0;
+ }
+}
+
+function safeSaveBest(){
+ try{
+  localStorage.setItem("2048best",String(best));
+ }catch(e){}
+}
+
+best=safeGetBest();
+
+function restart(){
+ grid=Array.from({length:4},()=>Array(4).fill(0));
+ score=0;
+ over=false;
+ won=false;
+ message.textContent="Use arrow keys or swipe to play.";
+ addTile();
+ addTile();
+ draw();
+}
+
+function addTile(){
+ let empty=[];
+
+ grid.forEach((row,y)=>{
+  row.forEach((v,x)=>{
+   if(!v)empty.push([y,x]);
+  });
+ });
+
+ if(empty.length){
+  const [y,x]=empty[Math.floor(Math.random()*empty.length)];
+  grid[y][x]=Math.random()<0.9?2:4;
+ }
+}
+
+function draw(){
+ board.innerHTML="";
+
+ grid.flat().forEach(v=>{
+  const d=document.createElement("div");
+  d.className="cell "+(v?"v"+v:"");
+  d.textContent=v||"";
+  d.setAttribute("role","gridcell");
+  d.setAttribute("aria-label",v?String(v):"Empty");
+  board.appendChild(d);
+ });
+
+ scoreEl.textContent=score;
+ bestEl.textContent=best;
+}
+
+function canMove(){
+ for(let y=0;y<4;y++){
+  for(let x=0;x<4;x++){
+   if(!grid[y][x])return true;
+   if(x<3&&grid[y][x]===grid[y][x+1])return true;
+   if(y<3&&grid[y][x]===grid[y+1][x])return true;
+  }
+ }
+ return false;
+}
+
+function move(dir){
+ if(over)return;
+
+ const old=JSON.stringify(grid);
+
+ for(let i=0;i<4;i++){
+  let line=[];
+
+  for(let j=0;j<4;j++){
+   const y=dir==="up"?j:dir==="down"?3-j:i;
+   const x=dir==="left"?j:dir==="right"?3-j:i;
+   line.push(grid[y][x]);
+  }
+
+  line=line.filter(v=>v);
+
+  for(let j=0;j<line.length-1;j++){
+   if(line[j]===line[j+1]){
+    line[j]*=2;
+    score+=line[j];
+    line.splice(j+1,1);
+
+    if(line[j]===2048&&!won){
+     won=true;
+     message.textContent="You reached 2048! Keep playing!";
+    }
+   }
+  }
+
+  while(line.length<4)line.push(0);
+
+  for(let j=0;j<4;j++){
+   const y=dir==="up"?j:dir==="down"?3-j:i;
+   const x=dir==="left"?j:dir==="right"?3-j:i;
+   grid[y][x]=line[j];
+  }
+ }
+
+ if(old!==JSON.stringify(grid)){
+  addTile();
+
+  if(score>best){
+   best=score;
+   safeSaveBest();
+  }
+
+  draw();
+
+  if(!canMove()){
+   over=true;
+   message.textContent="Game Over! Tap New Game to try again.";
+  }
+ }
+}
+
+document.addEventListener("keydown",e=>{
+ const keys={
+  ArrowUp:"up",
+  ArrowDown:"down",
+  ArrowLeft:"left",
+  ArrowRight:"right"
+ };
+
+ if(keys[e.key]){
+  e.preventDefault();
+  move(keys[e.key]);
+ }
+});
+
+let sx=0;
+let sy=0;
+
+board.addEventListener("touchstart",e=>{
+ sx=e.touches[0].clientX;
+ sy=e.touches[0].clientY;
+},{passive:true});
+
+board.addEventListener("touchend",e=>{
+ const dx=e.changedTouches[0].clientX-sx;
+ const dy=e.changedTouches[0].clientY-sy;
+
+ if(Math.max(Math.abs(dx),Math.abs(dy))<25)return;
+
+ move(
+  Math.abs(dx)>Math.abs(dy)
+  ?(dx>0?"right":"left")
+  :(dy>0?"down":"up")
+ );
+},{passive:true});
+
 restart();
 </script>
+
 </body>
 </html>
