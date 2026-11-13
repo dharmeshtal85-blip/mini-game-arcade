@@ -1,3 +1,4 @@
+
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
@@ -19,6 +20,34 @@
   <url>
     <loc>https://fruit-slice-arcade-amber.vercel.app/privacy.html</loc>
     <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://fruit-slice-arcade-amber.vercel.app/2048.html</loc>
+  </url>
+
+  <url>
+    <loc>https://fruit-slice-arcade-amber.vercel.app/blumi-hill-racers.html</loc>
+  </url>
+
+  <url>
+    <loc>https://fruit-slice-arcade-amber.vercel.app/fruit-peel-factory.html</loc>
+  </url>
+
+  <url>
+    <loc>https://fruit-slice-arcade-amber.vercel.app/neon-road-rush.html</loc>
+  </url>
+
+  <url>
+    <loc>https://fruit-slice-arcade-amber.vercel.app/neon-waves-overdrive.html</loc>
+  </url>
+
+  <url>
+    <loc>https://fruit-slice-arcade-amber.vercel.app/pop-it-3d-asmr.html</loc>
+  </url>
+
+  <url>
+    <loc>https://fruit-slice-arcade-amber.vercel.app/zen-knife-hit-asmr.html</loc>
   </url>
 
 </urlset>
