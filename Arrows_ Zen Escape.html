@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Arrows: Zen Escape</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      min-height: 100vh;
+      overflow: hidden;
+      background-color: #f5ebd9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    #game-wrap {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #f5ebd9;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-wrap">
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <script>
+    /**
+     * =========================================================================
+     * ARROWS: ZEN ESCAPE — COMPLETE SINGLE-FILE HTML5 CANVAS PUZZLE GAME
+     * =========================================================================
+     * Features:
+     * - Warm wooden top/bottom panels, cream parchment board, right-side Zoom slider
+     * - Guaranteed-solvable topological arrow puzzles (Levels 1-9 + Endless Generator)
+     * - Snake-like polyline glide animations along bends & gentle blocked spring-back
+     * - 4 Interactive Bottom Tools: Hint (Bulb), Eraser, Sightline Ruler, Magic Wand
+     * - "WONDERFUL!" celebration modal + Pixel-Art Gallery Restoration tabletop hub
+     * - Synthesized Marimba/Kalimba Web Audio ASMR & Relax Mode toggle
+     */
+
+    const wrapEl = document.getElementById('game-wrap');
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let W = 360;
+    let H = 640;
+    let DPR = 1;
+
+    // Color Palette for Arrows
+    const ARROW_PALETTE = [
+      { main: '#34B35B', dark: '#21823F', light: '#68D98B' }, // Emerald Green
+      { main: '#2D9CDB', dark: '#1B6FA0', light: '#6EC2F2' }, // Sky Blue
+      { main: '#F2994A', dark: '#C26E23', light: '#F8BE86' }, // Warm Orange
+      { main: '#BB6BD9', dark: '#8A3FA6', light: '#D89EEF' }, // Soft Purple
+      { main: '#EB5757', dark: '#B53333', light: '#F48E8E' }, // Coral Red
+      { main: '#27AE60', dark: '#197D43', light: '#58D68D' }  // Deep Jade
+    ];
+
+    const DIRS = {
+      UP:    { dx: 0,  dy: -1, angle: -Math.PI / 2 },
+      DOWN:  { dx: 0,  dy:  1, angle:  Math.PI / 2 },
+      LEFT:  { dx: -1, dy:  0, angle:  Math.PI },
+      RIGHT: { dx: 1,  dy:  0, angle:  0 }
+    };
+
+    /**
+     * =========================================================================
+     * 1. SYNTHESIZED MARIMBA & ASMR WEB AUDIO ENGINE
+     * =========================================================================
+     */
+    class ZenAudio {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+        this.ambientOn = false;
+        this.ambientTimer = null;
+        this.noteIndex = 0;
+        // Pentatonic C Major Kalimba scale (Hz)
+        this.scale = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66, 1318.51];
+      }
+
+      init() {
+        try {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume();
+          }
+        } catch (e) {}
+      }
+
+      playSlidePop() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const freq = this.scale[this.noteIndex % this.scale.length];
+          this.noteIndex++;
+
+          // Marimba fundamental + harmonic overtone
+          const osc = this.ctx.createOscillator();
+          const over = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+          osc.frequency.exponentialRampToValueAtTime(freq * 1.18, now + 0.14);
+
+          over.type = 'triangle';
+          over.frequency.setValueAtTime(freq * 2, now);
+
+          const overGain = this.ctx.createGain();
+          overGain.gain.setValueAtTime(0.06, now);
+          overGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.22, now + 0.012);
+          gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.28);
+
+          osc.connect(gain);
+          over.connect(overGain);
+          overGain.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          over.start(now);
+          osc.stop(now + 0.3);
+          over.stop(now + 0.3);
+        } catch (e) {}
+      }
+
+      playBlockedThud() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(165, now);
+          osc.frequency.exponentialRampToValueAtTime(75, now + 0.11);
+
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.13);
+        } catch (e) {}
+      }
+
+      playToolChime() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          [783.99, 1046.5, 1318.51].forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, now + i * 0.055);
+            g.gain.setValueAtTime(0.14, now + i * 0.055);
+            g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.055 + 0.25);
+            osc.connect(g);
+            g.connect(this.ctx.destination);
+            osc.start(now + i * 0.055);
+            osc.stop(now + i * 0.055 + 0.27);
+          });
+        } catch (e) {}
+      }
+
+      playWinFanfare() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98];
+          notes.forEach((f, idx) => {
+            const osc = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(f, now + idx * 0.075);
+            g.gain.setValueAtTime(0.18, now + idx * 0.075);
+            g.gain.exponentialRampToValueAtTime(0.0008, now + idx * 0.075 + 0.55);
+            osc.connect(g);
+            g.connect(this.ctx.destination);
+            osc.start(now + idx * 0.075);
+            osc.stop(now + idx * 0.075 + 0.6);
+          });
+        } catch (e) {}
+      }
+
+      toggleAmbient(enable) {
+        this.ambientOn = enable;
+        if (this.ambientTimer) {
+          clearInterval(this.ambientTimer);
+          this.ambientTimer = null;
+        }
+        if (enable) {
+          this.init();
+          let step = 0;
+          const chords = [261.63, 329.63, 392.00, 493.88, 392.00, 329.63];
+          this.ambientTimer = setInterval(() => {
+            if (this.muted || !this.ambientOn || !this.ctx) return;
+            try {
+              const now = this.ctx.currentTime;
+              const f = chords[step % chords.length];
+              step++;
+              const osc = this.ctx.createOscillator();
+              const g = this.ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(f, now);
+              g.gain.setValueAtTime(0.001, now);
+              g.gain.linearRampToValueAtTime(0.035, now + 0.25);
+              g.gain.exponentialRampToValueAtTime(0.0005, now + 1.4);
+              osc.connect(g);
+              g.connect(this.ctx.destination);
+              osc.start(now);
+              osc.stop(now + 1.45);
+            } catch (e) {}
+          }, 950);
+        }
+      }
+    }
+
+    const audio = new ZenAudio();
+
+    /**
+     * =========================================================================
+     * 2. PIXEL-ART GALLERY PAINTINGS (RESTORABLE WITH EARNED STARS!)
+     * =========================================================================
+     */
+    const GALLERY_PICTURES = [
+      {
+        id: 'sailboat',
+        name: 'Sunset Sailboat',
+        cols: 12,
+        rows: 12,
+        palette: {
+          'S': '#87CEEB', // Sky
+          'C': '#FFFFFF', // Cloud / Sail
+          'R': '#EB5757', // Sail stripe
+          'W': '#2D9CDB', // Ocean wave
+          'D': '#1B6FA0', // Deep water
+          'B': '#8B4513', // Boat hull
+          'Y': '#F2C94C'  // Sun
+        },
+        grid: [
+          'SSSYSSSSCCSS',
+          'SSYYYSSCCCCS',
+          'SSSYSSSSSSSS',
+          'SSSSSCSSSSSS',
+          'SSSSCCCSSSSS',
+          'SSSSCRCCSSSS',
+          'SSSCCRCCCWSS',
+          'SSCCCRCCCCSS',
+          'SSSSSBSSSSSS',
+          'SSBBBBBBBBSW',
+          'WWDDDDDDDDWW',
+          'DDDDWWWWDDDD'
+        ]
+      },
+      {
+        id: 'cottage',
+        name: 'Cozy Woodland Cottage',
+        cols: 12,
+        rows: 12,
+        palette: {
+          'S': '#BCE0FD',
+          'R': '#D94E4E',
+          'W': '#F5D6A7',
+          'D': '#6E3B1E',
+          'G': '#34B35B',
+          'L': '#68D98B',
+          'Y': '#FFE066'
+        },
+        grid: [
+          'SSSSSSSSSSSS',
+          'SSSSSRRSSSSS',
+          'SSSSRRRRSSSS',
+          'SSSRRRRRRSSS',
+          'SSRRRRRRRRSS',
+          'SSSWWWWWWWSS',
+          'SSSWYYWYYWSS',
+          'SSSWYYWYYWSS',
+          'SSSWWWDDWWSS',
+          'GGLWWWDDWWLG',
+          'GGGGGGGGGGGG',
+          'LGLGLGLGLGLG'
+        ]
+      },
+      {
+        id: 'bonsai',
+        name: 'Zen Sakura Bonsai',
+        cols: 12,
+        rows: 12,
+        palette: {
+          'S': '#FDEBD0',
+          'P': '#F48FB1',
+          'L': '#FCE4EC',
+          'M': '#EC407A',
+          'T': '#6D4C41',
+          'B': '#2E86C1',
+          'G': '#58D68D'
+        },
+        grid: [
+          'SSSSPPPPSSSS',
+          'SSPPPLLPPPSS',
+          'SPPLMMMMLLPS',
+          'SPPPMMMMMPPS',
+          'SSPPTTTTPPSS',
+          'SSSSSTTTSSSS',
+          'SSPPTTTTSSSS',
+          'SPPLMTTSSSSS',
+          'SSPPTTTTSSSS',
+          'SSSSSTTTSSSS',
+          'SSBBBBBBBBSS',
+          'SSSBBBBBBSSS'
+        ]
+      },
+      {
+        id: 'butterfly',
+        name: 'Golden Monarch',
+        cols: 12,
+        rows: 12,
+        palette: {
+          'S': '#E8F8F5',
+          'K': '#2C3E50',
+          'O': '#F39C12',
+          'Y': '#F7DC6F',
+          'W': '#FFFFFF'
+        },
+        grid: [
+          'SSSKSSSSKSSS',
+          'KKKKSSSSKKKK',
+          'KOOOKSSKOOOK',
+          'KOYOKKKKOYOK',
+          'KOOOWKKWOOOK',
+          'SKKKOKKOKKKS',
+          'SKOOKKKKOOKS',
+          'KOYOOKKOOYOK',
+          'KOOOKSSKOOOK',
+          'KKKKSSSSKKKK',
+          'SSSSSSSSSSSS',
+          'SSSSSSSSSSSS'
+        ]
+      }
+    ];
+
+    /**
+     * =========================================================================
+     * 3. GUARANTEED-SOLVABLE ARROW PUZZLE GENERATOR & HANDCRAFTED SHAPES
+     * =========================================================================
+     * Every puzzle is validated by a topological exit solver so 100% of arrows
+     * can escape cleanly without ever deadlocking!
+     */
+
+    // Helper: Check if an arrow can exit straight from its tip without hitting other active arrows
+    function canArrowExit(arrow, allArrows, gridCols, gridRows) {
+      const head = arrow.cells[arrow.cells.length - 1];
+      const dir = DIRS[arrow.dir];
+      const occupied = new Set();
+
+      for (const other of allArrows) {
+        if (other.id === arrow.id || other.removed) continue;
+        for (const c of other.cells) {
+          occupied.add(`${c[0]},${c[1]}`);
+        }
+      }
+
+      let cx = head[0] + dir.dx;
+      let cy = head[1] + dir.dy;
+      while (cx >= -1 && cx <= gridCols && cy >= -1 && cy <= gridRows) {
+        if (occupied.has(`${cx},${cy}`)) {
+          return false; // Blocked!
+        }
+        cx += dir.dx;
+        cy += dir.dy;
+      }
+      return true;
+    }
+
+    // Topological solver check: returns true if all arrows can exit in some valid order
+    function isPuzzleSolvable(arrows, cols, rows) {
+      const sim = arrows.map(a => ({ id: a.id, cells: a.cells, dir: a.dir, removed: false }));
+      let remaining = sim.length;
+      while (remaining > 0) {
+        let progressed = false;
+        for (const a of sim) {
+          if (!a.removed && canArrowExit(a, sim, cols, rows)) {
+            a.removed = true;
+            remaining--;
+            progressed = true;
+          }
+        }
+        if (!progressed) return false;
+      }
+      return true;
+    }
+
+    /**
+     * Generates a guaranteed-solvable puzzle constrained inside a custom silhouette mask!
+     * Mask is an array of strings ('#' = playable cell, '.' = empty space)
+     */
+    function generateSolvableMaskPuzzle(maskLines, maxArrows = 18, seedOffset = 0) {
+      const rows = maskLines.length;
+      const cols = maskLines[0].length;
+
+      for (let attempt = 0; attempt < 28; attempt++) {
+        const used = new Set();
+        const arrows = [];
+        const validCells = [];
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (maskLines[r][c] === '#') {
+              validCells.push([c, r]);
+            }
+          }
+        }
+
+        // Deterministic-friendly shuffled start order
+        validCells.sort((a, b) => {
+          const va = Math.sin(a[0] * 12.9898 + a[1] * 78.233 + attempt + seedOffset);
+          const vb = Math.sin(b[0] * 12.9898 + b[1] * 78.233 + attempt + seedOffset);
+          return va - vb;
+        });
+
+        const dirNames = ['UP', 'RIGHT', 'DOWN', 'LEFT'];
+
+        // Build arrows by growing short 2-to-5 cell snakes and validating solvability at each step
+        for (const [sx, sy] of validCells) {
+          if (arrows.length >= maxArrows) break;
+          if (used.has(`${sx},${sy}`)) continue;
+
+          const path = [[sx, sy]];
+          used.add(`${sx},${sy}`);
+
+          const targetLen = 2 + ((sx + sy + attempt) % 4);
+          while (path.length < targetLen) {
+            const [cx, cy] = path[path.length - 1];
+            const neighbors = [];
+            for (const dName of dirNames) {
+              const d = DIRS[dName];
+              const nx = cx + d.dx;
+              const ny = cy + d.dy;
+              if (
+                ny >= 0 && ny < rows && nx >= 0 && nx < cols &&
+                maskLines[ny][nx] === '#' &&
+                !used.has(`${nx},${ny}`)
+              ) {
+                neighbors.push([nx, ny, dName]);
+              }
+            }
+            if (neighbors.length === 0) break;
+            const pick = neighbors[(cx * 3 + cy * 5 + attempt) % neighbors.length];
+            path.push([pick[0], pick[1]]);
+            used.add(`${pick[0]},${pick[1]}`);
+          }
+
+          if (path.length >= 2) {
+            const head = path[path.length - 1];
+            const prev = path[path.length - 2];
+            const dx = head[0] - prev[0];
+            const dy = head[1] - prev[1];
+            let dir = 'UP';
+            if (dx === 1) dir = 'RIGHT';
+            else if (dx === -1) dir = 'LEFT';
+            else if (dy === 1) dir = 'DOWN';
+
+            const candidate = {
+              id: arrows.length,
+              cells: path,
+              dir,
+              colorIdx: (arrows.length + seedOffset) % ARROW_PALETTE.length
+            };
+
+            arrows.push(candidate);
+            // Immediately verify that adding this arrow keeps the entire board 100% solvable!
+            if (!isPuzzleSolvable(arrows, cols, rows)) {
+              arrows.pop();
+              for (const [ux, uy] of path) used.delete(`${ux},${uy}`);
+            }
+          } else {
+            used.delete(`${sx},${sy}`);
+          }
+        }
+
+        if (arrows.length >= Math.min(4, Math.floor(validCells.length / 4))) {
+          return { cols, rows, arrows };
+        }
+      }
+
+      // Fallback ultra-clean parallel lines if mask is tight
+      const fallbackArrows = [];
+      for (let c = 1; c < cols - 1; c += 2) {
+        fallbackArrows.push({
+          id: fallbackArrows.length,
+          cells: [[c, 2], [c, 1]],
+          dir: 'UP',
+          colorIdx: fallbackArrows.length % ARROW_PALETTE.length
+        });
+      }
+      return { cols, rows, arrows: fallbackArrows };
+    }
+
+    // Handcrafted & Silhouette Level Definitions
+    const LEVEL_BLUEPRINTS = [
+      {
+        title: 'Level 1',
+        name: 'Gentle Trio',
+        hintBanner: 'TAP AN ARROW TO MOVE IT',
+        cols: 7,
+        rows: 7,
+        handcrafted: [
+          { id: 0, cells: [[2, 4], [2, 3], [2, 2]], dir: 'UP', colorIdx: 0 },
+          { id: 1, cells: [[3, 2], [3, 3], [3, 4]], dir: 'DOWN', colorIdx: 2 },
+          { id: 2, cells: [[4, 4], [4, 3], [4, 2]], dir: 'UP', colorIdx: 1 }
+        ]
+      },
+      {
+        title: 'Level 2',
+        name: 'L-Bend Harmony',
+        hintBanner: 'USE THE SLIDER OR PINCH TO ZOOM',
+        cols: 7,
+        rows: 7,
+        handcrafted: [
+          { id: 0, cells: [[2, 2], [3, 2], [3, 1]], dir: 'UP', colorIdx: 4 },
+          { id: 1, cells: [[2, 3], [2, 4], [1, 4]], dir: 'LEFT', colorIdx: 0 },
+          { id: 2, cells: [[3, 3], [4, 3], [4, 4]], dir: 'DOWN', colorIdx: 1 },
+          { id: 3, cells: [[4, 2], [5, 2]], dir: 'RIGHT', colorIdx: 3 }
+        ]
+      },
+      {
+        title: 'Level 3',
+        name: 'Interlocking Square',
+        hintBanner: 'FIND THE FREE OUTER ARROWS FIRST',
+        cols: 8,
+        rows: 8,
+        handcrafted: [
+          { id: 0, cells: [[2, 3], [2, 2], [3, 2], [3, 1]], dir: 'UP', colorIdx: 0 },
+          { id: 1, cells: [[4, 2], [5, 2], [5, 3], [6, 3]], dir: 'RIGHT', colorIdx: 2 },
+          { id: 2, cells: [[5, 4], [5, 5], [4, 5], [4, 6]], dir: 'DOWN', colorIdx: 3 },
+          { id: 3, cells: [[3, 5], [2, 5], [2, 4], [1, 4]], dir: 'LEFT', colorIdx: 4 },
+          { id: 4, cells: [[3, 3], [4, 3]], dir: 'RIGHT', colorIdx: 1 },
+          { id: 5, cells: [[4, 4], [3, 4]], dir: 'LEFT', colorIdx: 5 }
+        ]
+      },
+      {
+        title: 'Level 4',
+        name: 'Monarch Butterfly',
+        hintBanner: 'PINCH OR SLIDE TO ZOOM IN ON WINGS',
+        mask: [
+          '.###....###.',
+          '#####..#####',
+          '############',
+          '.##########.',
+          '..########..',
+          '.##########.',
+          '############',
+          '#####..#####',
+          '.###....###.'
+        ],
+        maxArrows: 24
+      },
+      {
+        title: 'Level 5',
+        name: 'Sacred Diamond',
+        hintBanner: 'CLEAR THE PETALS FROM OUTSIDE IN',
+        mask: [
+          '....##....',
+          '...####...',
+          '..######..',
+          '.########.',
+          '##########',
+          '.########.',
+          '..######..',
+          '...####...',
+          '....##....'
+        ],
+        maxArrows: 20
+      },
+      {
+        title: 'Level 6',
+        name: 'Twin Hearts',
+        hintBanner: 'RELAX AND FOLLOW THE FLOW',
+        mask: [
+          '.###..###.',
+          '##########',
+          '##########',
+          '##########',
+          '.########.',
+          '..######..',
+          '...####...',
+          '....##....'
+        ],
+        maxArrows: 20
+      },
+      {
+        title: 'Level 7',
+        name: 'Zen Spiral Garden',
+        hintBanner: 'UNWIND THE SPIRAL PATHS',
+        mask: [
+          '##########',
+          '##########',
+          '##..##..##',
+          '##########',
+          '##########',
+          '##..##..##',
+          '##########',
+          '##########'
+        ],
+        maxArrows: 22
+      },
+      {
+        title: 'Level 8',
+        name: 'Blooming Lotus',
+        hintBanner: 'PEACEFUL SYMMETRY',
+        mask: [
+          '....##....',
+          '..######..',
+          '.########.',
+          '##########',
+          '##########',
+          '.########.',
+          '..######..',
+          '...####...'
+        ],
+        maxArrows: 22
+      }
+    ];
+
+    /**
+     * =========================================================================
+     * 4. GAME STATE & PERSISTENCE
+     * =========================================================================
+     */
+    const state = {
+      screen: 'puzzle', // 'puzzle' | 'gallery'
+      levelNum: 1,
+      relaxMode: true,
+      coins: 30,
+      stars: 2,
+      mistakes: 0,
+
+      // Puzzle board state
+      cols: 7,
+      rows: 7,
+      arrows: [], // { id, cells, dir, colorIdx, status: 'idle'|'exiting'|'bouncing', animProgress: 0 }
+      hintArrowId: null,
+      hintPulse: 0,
+      showSightlines: false,
+      bannerText: 'TAP AN ARROW TO MOVE IT',
+
+      // Camera Zoom & Pan
+      zoom: 1.0,
+      panX: 0,
+      panY: 0,
+      isDraggingPan: false,
+      dragStartX: 0,
+      dragStartY: 0,
+      dragMoved: false,
+      isDraggingZoomSlider: false,
+
+      // Modals & Popups
+      showWinModal: false,
+      winCoinsEarned: 15,
+      winStarsEarned: 3,
+      showSettingsModal: false,
+      showNoStarsToast: 0,
+
+      // Gallery State
+      galleryIndex: 0,
+      galleryPainted: {}, // { 'sailboat': Set(['0,0', ...]) }
+
+      // Particles & Confetti
+      particles: [],
+      animTime: 0
+    };
+
+    function saveProgress() {
+      try {
+        const serializedGallery = {};
+        Object.keys(state.galleryPainted).forEach(k => {
+          serializedGallery[k] = Array.from(state.galleryPainted[k]);
+        });
+        localStorage.setItem('arrows_zen_save_v1', JSON.stringify({
+          levelNum: state.levelNum,
+          coins: state.coins,
+          stars: state.stars,
+          relaxMode: state.relaxMode,
+          galleryIndex: state.galleryIndex,
+          galleryPainted: serializedGallery
+        }));
+      } catch (e) {}
+    }
+
+    function loadProgress() {
+      try {
+        const raw = localStorage.getItem('arrows_zen_save_v1');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (typeof data.levelNum === 'number') state.levelNum = Math.max(1, data.levelNum);
+        if (typeof data.coins === 'number') state.coins = data.coins;
+        if (typeof data.stars === 'number') state.stars = data.stars;
+        if (typeof data.relaxMode === 'boolean') state.relaxMode = data.relaxMode;
+        if (typeof data.galleryIndex === 'number') state.galleryIndex = data.galleryIndex;
+        if (data.galleryPainted) {
+          Object.keys(data.galleryPainted).forEach(k => {
+            state.galleryPainted[k] = new Set(data.galleryPainted[k]);
+          });
+        }
+      } catch (e) {}
+    }
+
+    function loadPuzzleLevel(lvlNum) {
+      state.levelNum = lvlNum;
+      state.screen = 'puzzle';
+      state.showWinModal = false;
+      state.hintArrowId = null;
+      state.showSightlines = false;
+      state.mistakes = 0;
+      state.panX = 0;
+      state.panY = 0;
+
+      const bpIdx = lvlNum - 1;
+      let built;
+      if (bpIdx < LEVEL_BLUEPRINTS.length) {
+        const bp = LEVEL_BLUEPRINTS[bpIdx];
+        state.bannerText = bp.hintBanner;
+        if (bp.handcrafted) {
+          built = {
+            cols: bp.cols,
+            rows: bp.rows,
+            arrows: bp.handcrafted.map(a => ({
+              id: a.id,
+              cells: a.cells.map(c => [c[0], c[1]]),
+              dir: a.dir,
+              colorIdx: a.colorIdx
+            }))
+          };
+        } else {
+          built = generateSolvableMaskPuzzle(bp.mask, bp.maxArrows, lvlNum * 7);
+        }
+      } else {
+        // Endless Procedural Zen Patterns (Level 9+)
+        state.bannerText = `ENDLESS ZEN PATTERN #${lvlNum - LEVEL_BLUEPRINTS.length}`;
+        const shapes = [
+          [
+            '..######..',
+            '.########.',
+            '##########',
+            '##########',
+            '.########.',
+            '..######..'
+          ],
+          [
+            '###....###',
+            '####..####',
+            '##########',
+            '.########.',
+            '##########',
+            '####..####',
+            '###....###'
+          ],
+          [
+            '....##....',
+            '..######..',
+            '##########',
+            '##########',
+            '..######..',
+            '....##....'
+          ]
+        ];
+        const chosenMask = shapes[lvlNum % shapes.length];
+        built = generateSolvableMaskPuzzle(chosenMask, 24, lvlNum * 13);
+      }
+
+      state.cols = built.cols;
+      state.rows = built.rows;
+      state.arrows = built.arrows.map(a => ({
+        ...a,
+        status: 'idle',
+        animProgress: 0,
+        removed: false
+      }));
+
+      // Auto-fit comfortable zoom
+      state.zoom = built.cols >= 10 ? 0.92 : 1.05;
+      saveProgress();
+    }
+
+    /**
+     * =========================================================================
+     * 5. ARROW INTERACTION & SNAKE-LIKE PATH ANIMATION
+     * =========================================================================
+     */
+    function attemptLaunchArrow(arrow) {
+      if (!arrow || arrow.removed || arrow.status === 'exiting') return;
+      audio.init();
+
+      const clear = canArrowExit(arrow, state.arrows, state.cols, state.rows);
+      if (clear) {
+        arrow.status = 'exiting';
+        arrow.animProgress = 0;
+        if (state.hintArrowId === arrow.id) state.hintArrowId = null;
+        audio.playSlidePop();
+        try {
+          if (navigator.vibrate) navigator.vibrate(12);
+        } catch (e) {}
+      } else {
+        arrow.status = 'bouncing';
+        arrow.animProgress = 0;
+        state.mistakes++;
+        audio.playBlockedThud();
+        try {
+          if (navigator.vibrate) navigator.vibrate([18, 25, 18]);
+        } catch (e) {}
+      }
+    }
+
+    function useToolHint() {
+      audio.init();
+      const freeArrow = state.arrows.find(a => !a.removed && a.status === 'idle' && canArrowExit(a, state.arrows, state.cols, state.rows));
+      if (freeArrow) {
+        state.hintArrowId = freeArrow.id;
+        state.hintPulse = 1.0;
+        audio.playToolChime();
+      }
+    }
+
+    function useToolEraser() {
+      audio.init();
+      // Prefer removing an arrow that is blocking others (or any active arrow)
+      const active = state.arrows.filter(a => !a.removed && a.status !== 'exiting');
+      if (active.length === 0) return;
+      // Pick one that isn't currently free so it unblocks the board!
+      const blocker = active.find(a => !canArrowExit(a, state.arrows, state.cols, state.rows)) || active[0];
+      blocker.removed = true;
+      audio.playToolChime();
+      spawnBoardSparkles(blocker.cells[0][0], blocker.cells[0][1], ARROW_PALETTE[blocker.colorIdx].main);
+      checkLevelCleared();
+    }
+
+    function useToolSightline() {
+      audio.init();
+      state.showSightlines = !state.showSightlines;
+      audio.playToolChime();
+    }
+
+    function useToolMagicWand() {
+      audio.init();
+      let launched = 0;
+      // Launch up to 3 currently unobstructed arrows sequentially
+      const tryNext = () => {
+        if (launched >= 3) return;
+        const free = state.arrows.find(a => !a.removed && a.status === 'idle' && canArrowExit(a, state.arrows, state.cols, state.rows));
+        if (free) {
+          attemptLaunchArrow(free);
+          launched++;
+          setTimeout(tryNext, 140);
+        }
+      };
+      tryNext();
+    }
+
+    function spawnBoardSparkles(gx, gy, color) {
+      const m = getBoardMetrics();
+      const sx = m.originX + (gx + 0.5) * m.cellSize;
+      const sy = m.originY + (gy + 0.5) * m.cellSize;
+      for (let i = 0; i < 14; i++) {
+        const ang = (i * Math.PI * 2) / 14;
+        const spd = 55 + Math.random() * 90;
+        state.particles.push({
+          x: sx,
+          y: sy,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          color,
+          size: 4 + Math.random() * 4,
+          alpha: 1,
+          isConfetti: false
+        });
+      }
+    }
+
+    function spawnWinConfetti() {
+      const colors = ['#FF595E', '#FFCA3A', '#8AC926', '#1982C4', '#BB6BD9', '#FF9F1C'];
+      for (let i = 0; i < 90; i++) {
+        state.particles.push({
+          x: W * 0.5 + (Math.random() - 0.5) * 140,
+          y: H * 0.42 + (Math.random() - 0.5) * 80,
+          vx: (Math.random() - 0.5) * 340,
+          vy: -180 - Math.random() * 240,
+          rot: Math.random() * Math.PI * 2,
+          vRot: (Math.random() - 0.5) * 12,
+          color: colors[i % colors.length],
+          size: 6 + Math.random() * 6,
+          alpha: 1,
+          isConfetti: true
+        });
+      }
+    }
+
+    function checkLevelCleared() {
+      const anyLeft = state.arrows.some(a => !a.removed);
+      if (!anyLeft && !state.showWinModal) {
+        state.showWinModal = true;
+        state.winCoinsEarned = 15;
+        state.winStarsEarned = state.relaxMode ? 3 : Math.max(1, 3 - Math.floor(state.mistakes / 2));
+        state.coins += state.winCoinsEarned;
+        state.stars += state.winStarsEarned;
+        audio.playWinFanfare();
+        spawnWinConfetti();
+        saveProgress();
+      }
+    }
+
+    /**
+     * =========================================================================
+     * 6. LAYOUT METRICS & HIT-TESTING
+     * =========================================================================
+     */
+    function getLayoutBoxes() {
+      const topH = 66;
+      const botH = 82;
+      const bannerY = topH + 10;
+      const bannerH = 38;
+
+      // Top HUD buttons
+      const settingsBtn = { x: 14, y: 12, w: 42, h: 42 };
+      const restartBtn = { x: 64, y: 12, w: 42, h: 42 };
+      const plaqueW = Math.min(156, W * 0.38);
+      const levelPlaque = { x: W / 2 - plaqueW / 2, y: 9, w: plaqueW, h: 48 };
+      const relaxBtn = { x: W - 94, y: 14, w: 80, h: 38 };
+
+      // Right Zoom Slider (matches video)
+      const sliderX = W - 46;
+      const sliderY = topH + 74;
+      const sliderW = 32;
+      const sliderH = Math.min(230, H - topH - botH - 120);
+
+      // Bottom 4 Tool Buttons
+      const toolSize = 56;
+      const toolGap = Math.min(16, (W - 4 * toolSize - 32) / 3);
+      const totalToolsW = 4 * toolSize + 3 * toolGap;
+      const startToolsX = (W - totalToolsW) / 2;
+      const toolsY = H - botH + 13;
+
+      const tools = [
+        { id: 'hint', x: startToolsX, y: toolsY, w: toolSize, h: toolSize },
+        { id: 'eraser', x: startToolsX + (toolSize + toolGap), y: toolsY, w: toolSize, h: toolSize },
+        { id: 'ruler', x: startToolsX + 2 * (toolSize + toolGap), y: toolsY, w: toolSize, h: toolSize },
+        { id: 'wand', x: startToolsX + 3 * (toolSize + toolGap), y: toolsY, w: toolSize, h: toolSize }
+      ];
+
+      return {
+        topH,
+        botH,
+        banner: { x: 16, y: bannerY, w: W - 32, h: bannerH },
+        settingsBtn,
+        restartBtn,
+        levelPlaque,
+        relaxBtn,
+        zoomSlider: { x: sliderX, y: sliderY, w: sliderW, h: sliderH },
+        tools
+      };
+    }
+
+    function getBoardMetrics() {
+      const ui = getLayoutBoxes();
+      const playTop = ui.banner.y + ui.banner.h + 14;
+      const playBot = H - ui.botH - 14;
+      const availW = W - 76; // Leave comfortable room for right zoom slider
+      const availH = playBot - playTop;
+
+      const baseCell = Math.min(availW / state.cols, availH / state.rows, 54);
+      const cellSize = baseCell * state.zoom;
+      const boardW = state.cols * cellSize;
+      const boardH = state.rows * cellSize;
+
+      const originX = (W - 34) / 2 - boardW / 2 + state.panX;
+      const originY = playTop + availH / 2 - boardH / 2 + state.panY;
+
+      return { cellSize, boardW, boardH, originX, originY };
+    }
+
+    function pointInRect(px, py, r) {
+      return px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
+    }
+
+    // Distance from point (px, py) to line segment (x1, y1)-(x2, y2)
+    function distToSegment(px, py, x1, y1, x2, y2) {
+      const l2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+      if (l2 === 0) return Math.hypot(px - x1, py - y1);
+      let t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / l2;
+      t = Math.max(0, Math.min(1, t));
+      return Math.hypot(px - (x1 + t * (x2 - x1)), py - (y1 + t * (y2 - y1)));
+    }
+
+    function findArrowAtScreenPoint(sx, sy) {
+      const m = getBoardMetrics();
+      const hitRadius = Math.max(16, m.cellSize * 0.44);
+      let bestArrow = null;
+      let bestDist = hitRadius;
+
+      for (const arrow of state.arrows) {
+        if (arrow.removed || arrow.status === 'exiting') continue;
+        for (let i = 0; i < arrow.cells.length - 1; i++) {
+          const x1 = m.originX + (arrow.cells[i][0] + 0.5) * m.cellSize;
+          const y1 = m.originY + (arrow.cells[i][1] + 0.5) * m.cellSize;
+          const x2 = m.originX + (arrow.cells[i + 1][0] + 0.5) * m.cellSize;
+          const y2 = m.originY + (arrow.cells[i + 1][1] + 0.5) * m.cellSize;
+          const d = distToSegment(sx, sy, x1, y1, x2, y2);
+          if (d < bestDist) {
+            bestDist = d;
+            bestArrow = arrow;
+          }
+        }
+      }
+      return bestArrow;
+    }
+
+    /**
+     * =========================================================================
+     * 7. POINTER, PINCH-ZOOM & WHEEL INPUT HANDLERS
+     * =========================================================================
+     */
+    const activePointers = new Map();
+    let initialPinchDist = null;
+    let initialPinchZoom = 1;
+
+    function handleZoomSliderPointer(py) {
+      const sl = getLayoutBoxes().zoomSlider;
+      const trackTop = sl.y + 28;
+      const trackBot = sl.y + sl.h - 28;
+      const ratio = Math.max(0, Math.min(1, (py - trackTop) / (trackBot - trackTop)));
+      // Top is '-' (0.55x), Bottom is '+' (1.85x) matching the video!
+      state.zoom = 0.55 + ratio * 1.30;
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      audio.init();
+      const rect = canvas.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+
+      activePointers.set(e.pointerId, { x: px, y: py });
+      if (activePointers.size === 2) {
+        const pts = Array.from(activePointers.values());
+        initialPinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        initialPinchZoom = state.zoom;
+        return;
+      }
+
+      const ui = getLayoutBoxes();
+
+      // 1. Settings Modal Open
+      if (state.showSettingsModal) {
+        const card = { x: W / 2 - 150, y: H / 2 - 135, w: 300, h: 270 };
+        if (!pointInRect(px, py, card)) {
+          state.showSettingsModal = false;
+          return;
+        }
+        // Sound toggle row
+        if (py > H / 2 - 55 && py < H / 2 - 5) {
+          audio.muted = !audio.muted;
+          audio.playSlidePop();
+        }
+        // Ambient toggle row
+        if (py > H / 2 + 5 && py < H / 2 + 55) {
+          audio.toggleAmbient(!audio.ambientOn);
+        }
+        // Close button
+        if (py > H / 2 + 70) {
+          state.showSettingsModal = false;
+        }
+        return;
+      }
+
+      // 2. Level Complete "WONDERFUL!" Modal Open
+      if (state.showWinModal) {
+        const contBtn = { x: W / 2 - 105, y: H / 2 + 78, w: 210, h: 48 };
+        if (pointInRect(px, py, contBtn)) {
+          audio.playSlidePop();
+          state.showWinModal = false;
+          state.screen = 'gallery';
+        }
+        return;
+      }
+
+      // 3. Top Bar Buttons (Shared across Puzzle & Gallery)
+      if (pointInRect(px, py, ui.settingsBtn)) {
+        state.showSettingsModal = true;
+        return;
+      }
+      if (pointInRect(px, py, ui.restartBtn)) {
+        audio.playToolChime();
+        loadPuzzleLevel(state.levelNum);
+        return;
+      }
+      if (pointInRect(px, py, ui.relaxBtn)) {
+        state.relaxMode = !state.relaxMode;
+        audio.playSlidePop();
+        saveProgress();
+        return;
+      }
+
+      // 4. Gallery Screen Interactions
+      if (state.screen === 'gallery') {
+        handleGalleryTap(px, py);
+        return;
+      }
+
+      // 5. Right-Side Zoom Slider
+      if (pointInRect(px, py, ui.zoomSlider)) {
+        state.isDraggingZoomSlider = true;
+        handleZoomSliderPointer(py);
+        return;
+      }
+
+      // 6. Bottom 4 Tool Buttons
+      for (const tool of ui.tools) {
+        if (pointInRect(px, py, tool)) {
+          if (tool.id === 'hint') useToolHint();
+          else if (tool.id === 'eraser') useToolEraser();
+          else if (tool.id === 'ruler') useToolSightline();
+          else if (tool.id === 'wand') useToolMagicWand();
+          return;
+        }
+      }
+
+      // 7. Start board pan / arrow tap tracking
+      state.isDraggingPan = true;
+      state.dragStartX = px;
+      state.dragStartY = py;
+      state.dragMoved = false;
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+
+      if (activePointers.has(e.pointerId)) {
+        activePointers.set(e.pointerId, { x: px, y: py });
+      }
+
+      // Two-finger pinch zoom
+      if (activePointers.size === 2 && initialPinchDist) {
+        const pts = Array.from(activePointers.values());
+        const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        state.zoom = Math.max(0.55, Math.min(1.85, initialPinchZoom * (dist / initialPinchDist)));
+        return;
+      }
+
+      if (state.isDraggingZoomSlider) {
+        handleZoomSliderPointer(py);
+        return;
+      }
+
+      if (state.isDraggingPan && state.screen === 'puzzle') {
+        const dx = px - state.dragStartX;
+        const dy = py - state.dragStartY;
+        if (Math.hypot(dx, dy) > 8) {
+          state.dragMoved = true;
+          state.panX = Math.max(-140, Math.min(140, state.panX + dx));
+          state.panY = Math.max(-140, Math.min(140, state.panY + dy));
+          state.dragStartX = px;
+          state.dragStartY = py;
+        }
+      }
+    });
+
+    canvas.addEventListener('pointerup', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+
+      activePointers.delete(e.pointerId);
+      if (activePointers.size < 2) initialPinchDist = null;
+
+      if (state.isDraggingZoomSlider) {
+        state.isDraggingZoomSlider = false;
+        return;
+      }
+
+      if (state.isDraggingPan) {
+        state.isDraggingPan = false;
+        if (!state.dragMoved && state.screen === 'puzzle') {
+          const hitArrow = findArrowAtScreenPoint(px, py);
+          if (hitArrow) {
+            attemptLaunchArrow(hitArrow);
+          }
+        }
+      }
+    });
+
+    canvas.addEventListener('pointercancel', (e) => {
+      activePointers.delete(e.pointerId);
+      state.isDraggingPan = false;
+      state.isDraggingZoomSlider = false;
+    });
+
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.08 : 0.08;
+      state.zoom = Math.max(0.55, Math.min(1.85, state.zoom + delta));
+    }, { passive: false });
+
+    function handleGalleryTap(px, py) {
+      const pic = GALLERY_PICTURES[state.galleryIndex % GALLERY_PICTURES.length];
+      if (!state.galleryPainted[pic.id]) state.galleryPainted[pic.id] = new Set();
+      const paintedSet = state.galleryPainted[pic.id];
+
+      // Big green "LEVEL X" button at bottom
+      const nextLvlBtn = { x: W / 2 - 110, y: H - 118, w: 220, h: 52 };
+      if (pointInRect(px, py, nextLvlBtn)) {
+        audio.playSlidePop();
+        loadPuzzleLevel(state.levelNum + 1);
+        return;
+      }
+
+      // Gallery Book switcher button (bottom right)
+      const bookBtn = { x: W - 88, y: H - 124, w: 72, h: 64 };
+      if (pointInRect(px, py, bookBtn)) {
+        audio.playToolChime();
+        state.galleryIndex = (state.galleryIndex + 1) % GALLERY_PICTURES.length;
+        saveProgress();
+        return;
+      }
+
+      // Tap pixel grid frame to spend 1 Star and restore pixels!
+      const gridSize = Math.min(W - 64, H - 280, 290);
+      const gx0 = W / 2 - gridSize / 2;
+      const gy0 = 138;
+      if (pointInRect(px, py, { x: gx0, y: gy0, w: gridSize, h: gridSize })) {
+        const totalCells = pic.cols * pic.rows;
+        if (paintedSet.size >= totalCells) {
+          // Already 100% restored—cycle to next artwork!
+          state.galleryIndex = (state.galleryIndex + 1) % GALLERY_PICTURES.length;
+          audio.playToolChime();
+          return;
+        }
+        if (state.stars <= 0) {
+          state.showNoStarsToast = 2.0;
+          audio.playBlockedThud();
+          return;
+        }
+        // Spend 1 Star to paint a cluster of 12 connected pixels!
+        state.stars -= 1;
+        let paintedNow = 0;
+        for (let r = 0; r < pic.rows && paintedNow < 12; r++) {
+          for (let c = 0; c < pic.cols && paintedNow < 12; c++) {
+            const key = `${c},${r}`;
+            if (!paintedSet.has(key)) {
+              paintedSet.add(key);
+              paintedNow++;
+            }
+          }
+        }
+        audio.playToolChime();
+        spawnWinConfetti();
+        saveProgress();
+      }
+    }
+
+    /**
+     * =========================================================================
+     * 8. SIMULATION UPDATE LOOP (60 FPS)
+     * =========================================================================
+     */
+    function update(dt) {
+      state.animTime += dt;
+      if (state.hintPulse > 0) state.hintPulse = Math.max(0, state.hintPulse - dt * 0.4);
+      if (state.showNoStarsToast > 0) state.showNoStarsToast = Math.max(0, state.showNoStarsToast - dt);
+
+      // Update Arrows
+      for (const arrow of state.arrows) {
+        if (arrow.removed) continue;
+
+        if (arrow.status === 'exiting') {
+          arrow.animProgress += dt * 16.5; // Smooth fast snake glide
+          if (arrow.animProgress > arrow.cells.length + Math.max(state.cols, state.rows) + 4) {
+            arrow.removed = true;
+            checkLevelCleared();
+          }
+        } else if (arrow.status === 'bouncing') {
+          arrow.animProgress += dt * 5.2;
+          if (arrow.animProgress >= 1) {
+            arrow.status = 'idle';
+            arrow.animProgress = 0;
+          }
+        }
+      }
+
+      // Update Particles & Confetti
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const p = state.particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        if (p.isConfetti) {
+          p.vy += 420 * dt;
+          p.vx *= 0.98;
+          p.rot += p.vRot * dt;
+          p.alpha -= dt * 0.45;
+        } else {
+          p.alpha -= dt * 1.8;
+        }
+        if (p.alpha <= 0) state.particles.splice(i, 1);
+      }
+    }
+
+    /**
+     * =========================================================================
+     * 9. PROCEDURAL VECTOR & WOOD-GRAIN RENDERER
+     * =========================================================================
+     */
+    function drawRoundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function drawWoodPanel(x, y, w, h, horizontal = true) {
+      const grad = horizontal
+        ? ctx.createLinearGradient(x, y, x, y + h)
+        : ctx.createLinearGradient(x, y, x + w, y);
+      grad.addColorStop(0, '#E3B079');
+      grad.addColorStop(0.5, '#D19960');
+      grad.addColorStop(1, '#B87E46');
+      ctx.fillStyle = grad;
+      ctx.fillRect(x, y, w, h);
+
+      // Subtle woodgrain streaks
+      ctx.strokeStyle = 'rgba(112, 62, 22, 0.16)';
+      ctx.lineWidth = 1.5;
+      if (horizontal) {
+        for (let gy = y + 8; gy < y + h; gy += 11) {
+          ctx.beginPath();
+          ctx.moveTo(x, gy);
+          ctx.bezierCurveTo(x + w * 0.33, gy + 3, x + w * 0.66, gy - 3, x + w, gy);
+          ctx.stroke();
+        }
+      } else {
+        for (let gx = x + 6; gx < x + w; gx += 8) {
+          ctx.beginPath();
+          ctx.moveTo(gx, y);
+          ctx.lineTo(gx, y + h);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function drawWoodButton(box, radius = 12, active = false) {
+      ctx.save();
+      // Drop shadow
+      ctx.fillStyle = 'rgba(72, 38, 12, 0.45)';
+      drawRoundRect(box.x, box.y + 3, box.w, box.h, radius);
+      ctx.fill();
+
+      const grad = ctx.createLinearGradient(box.x, box.y, box.x, box.y + box.h);
+      if (active) {
+        grad.addColorStop(0, '#68D98B');
+        grad.addColorStop(1, '#2E9E52');
+      } else {
+        grad.addColorStop(0, '#F6D19E');
+        grad.addColorStop(1, '#D39A5E');
+      }
+      ctx.fillStyle = grad;
+      drawRoundRect(box.x, box.y, box.w, box.h, radius);
+      ctx.fill();
+
+      ctx.lineWidth = 2.2;
+      ctx.strokeStyle = active ? '#1F6E38' : '#7D491D';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawStar(cx, cy, r, filled = true) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const aOuter = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+        const aInner = aOuter + Math.PI / 5;
+        const ox = Math.cos(aOuter) * r;
+        const oy = Math.sin(aOuter) * r;
+        const ix = Math.cos(aInner) * (r * 0.46);
+        const iy = Math.sin(aInner) * (r * 0.46);
+        if (i === 0) ctx.moveTo(ox, oy);
+        else ctx.lineTo(ox, oy);
+        ctx.lineTo(ix, iy);
+      }
+      ctx.closePath();
+      ctx.fillStyle = filled ? '#FFCA3A' : 'rgba(92, 52, 18, 0.35)';
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = filled ? '#B87200' : 'rgba(92, 52, 18, 0.5)';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /**
+     * Renders an individual polyline arrow with smooth snake-like path sliding
+     */
+    function drawArrowPolyline(arrow, m) {
+      const pal = ARROW_PALETTE[arrow.colorIdx % ARROW_PALETTE.length];
+      const dir = DIRS[arrow.dir];
+      const pts = arrow.cells.map(c => ({
+        x: m.originX + (c[0] + 0.5) * m.cellSize,
+        y: m.originY + (c[1] + 0.5) * m.cellSize
+      }));
+
+      // Compute snake slide offset
+      let slideCells = 0;
+      if (arrow.status === 'exiting') {
+        slideCells = arrow.animProgress;
+      } else if (arrow.status === 'bouncing') {
+        slideCells = Math.sin(arrow.animProgress * Math.PI) * 0.34;
+      }
+
+      // Build shifted polyline points so tail follows bends before shooting straight out
+      let renderPts = [];
+      if (slideCells <= 0) {
+        renderPts = pts;
+      } else {
+        // Extend ray ahead of head
+        const extSteps = Math.ceil(slideCells) + 2;
+        const extended = [...pts];
+        const last = pts[pts.length - 1];
+        for (let s = 1; s <= extSteps; s++) {
+          extended.push({
+            x: last.x + dir.dx * s * m.cellSize,
+            y: last.y + dir.dy * s * m.cellSize
+          });
+        }
+
+        const totalSegs = pts.length - 1;
+        const startIdx = Math.min(extended.length - 1.05, slideCells);
+        const endIdx = Math.min(extended.length - 1, slideCells + totalSegs);
+
+        const sampleExt = (fIdx) => {
+          const i0 = Math.floor(fIdx);
+          const frac = fIdx - i0;
+          const a = extended[i0];
+          const b = extended[Math.min(extended.length - 1, i0 + 1)];
+          return { x: a.x + (b.x - a.x) * frac, y: a.y + (b.y - a.y) * frac };
+        };
+
+        renderPts.push(sampleExt(startIdx));
+        for (let k = Math.floor(startIdx) + 1; k <= Math.floor(endIdx); k++) {
+          renderPts.push(extended[k]);
+        }
+        renderPts.push(sampleExt(endIdx));
+      }
+
+      if (renderPts.length < 2) return;
+
+      const lineW = Math.max(5, m.cellSize * 0.24);
+      const isHinted = state.hintArrowId === arrow.id;
+
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (isHinted) {
+        ctx.shadowColor = '#FFCA3A';
+        ctx.shadowBlur = 14 + Math.sin(state.animTime * 10) * 6;
+      }
+
+      // Optional Sightline Ruler Overlay
+      if (state.showSightlines && arrow.status === 'idle') {
+        const free = canArrowExit(arrow, state.arrows, state.cols, state.rows);
+        const head = renderPts[renderPts.length - 1];
+        ctx.save();
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = free ? 'rgba(52, 179, 91, 0.55)' : 'rgba(235, 87, 87, 0.35)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(head.x, head.y);
+        ctx.lineTo(head.x + dir.dx * W, head.y + dir.dy * H);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Subtle 3D drop shadow under body
+      ctx.strokeStyle = 'rgba(65, 38, 12, 0.18)';
+      ctx.lineWidth = lineW + 2;
+      ctx.beginPath();
+      renderPts.forEach((p, idx) => {
+        if (idx === 0) ctx.moveTo(p.x, p.y + 3);
+        else ctx.lineTo(p.x, p.y + 3);
+      });
+      ctx.stroke();
+
+      // Main Arrow Body Polyline
+      ctx.strokeStyle = pal.main;
+      ctx.lineWidth = lineW;
+      ctx.beginPath();
+      renderPts.forEach((p, idx) => {
+        if (idx === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      });
+      ctx.stroke();
+
+      // Inner glossy highlight core
+      ctx.strokeStyle = pal.light;
+      ctx.lineWidth = lineW * 0.32;
+      ctx.stroke();
+
+      // Arrowhead Triangle at final point
+      const tip = renderPts[renderPts.length - 1];
+      const headLen = lineW * 1.45;
+      const headHalfW = lineW * 1.15;
+
+      ctx.translate(tip.x + dir.dx * (headLen * 0.35), tip.y + dir.dy * (headLen * 0.35));
+      ctx.rotate(dir.angle);
+
+      ctx.beginPath();
+      ctx.moveTo(headLen * 0.65, 0);
+      ctx.lineTo(-headLen * 0.45, -headHalfW);
+      ctx.lineTo(-headLen * 0.25, 0);
+      ctx.lineTo(-headLen * 0.45, headHalfW);
+      ctx.closePath();
+      ctx.fillStyle = pal.main;
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = pal.dark;
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function renderPuzzleScreen() {
+      const ui = getLayoutBoxes();
+      const m = getBoardMetrics();
+
+      // 1. Warm Cream Parchment Background
+      ctx.fillStyle = '#F5EBD9';
+      ctx.fillRect(0, 0, W, H);
+
+      // Subtle dotted paper grid
+      ctx.fillStyle = 'rgba(138, 98, 56, 0.14)';
+      for (let r = 0; r < state.rows; r++) {
+        for (let c = 0; c < state.cols; c++) {
+          const cx = m.originX + (c + 0.5) * m.cellSize;
+          const cy = m.originY + (r + 0.5) * m.cellSize;
+          ctx.beginPath();
+          ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // 2. Render All Active Arrows
+      for (const arrow of state.arrows) {
+        if (!arrow.removed) {
+          drawArrowPolyline(arrow, m);
+        }
+      }
+
+      // 3. Top Banner Plaque ("TAP AN ARROW TO MOVE IT")
+      drawWoodButton(ui.banner, 12, false);
+      ctx.fillStyle = '#4A2508';
+      ctx.font = '700 12px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(state.bannerText, ui.banner.x + ui.banner.w / 2, ui.banner.y + ui.banner.h / 2 + 1);
+
+      // 4. Right-Side Vertical Wooden Zoom Slider (Matches Video!)
+      const sl = ui.zoomSlider;
+      drawWoodButton(sl, 16, false);
+
+      // '-' at top, '+' at bottom
+      ctx.fillStyle = '#5C310C';
+      ctx.font = '700 18px sans-serif';
+      ctx.fillText('−', sl.x + sl.w / 2, sl.y + 15);
+      ctx.fillText('+', sl.x + sl.w / 2, sl.y + sl.h - 14);
+
+      // Inner groove track
+      const grooveX = sl.x + sl.w / 2 - 3;
+      const grooveTop = sl.y + 28;
+      const grooveH = sl.h - 56;
+      ctx.fillStyle = '#8C5423';
+      drawRoundRect(grooveX, grooveTop, 6, grooveH, 3);
+      ctx.fill();
+
+      // Draggable Wooden Thumb
+      const zoomNorm = (state.zoom - 0.55) / 1.30;
+      const thumbY = grooveTop + zoomNorm * grooveH;
+      ctx.fillStyle = '#FFF3D6';
+      ctx.beginPath();
+      ctx.arc(sl.x + sl.w / 2, thumbY, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#6E3B10';
+      ctx.stroke();
+    }
+
+    function renderGalleryScreen() {
+      // Rich wooden tabletop background (matches Video Level 4 Gallery scene!)
+      drawWoodPanel(0, 0, W, H, true);
+
+      const pic = GALLERY_PICTURES[state.galleryIndex % GALLERY_PICTURES.length];
+      if (!state.galleryPainted[pic.id]) state.galleryPainted[pic.id] = new Set();
+      const paintedSet = state.galleryPainted[pic.id];
+      const totalCells = pic.cols * pic.rows;
+      const isComplete = paintedSet.size >= totalCells;
+
+      // Top Instruction Banner
+      const banner = { x: 16, y: 76, w: W - 32, h: 42 };
+      drawWoodButton(banner, 12, false);
+      ctx.fillStyle = '#4A2508';
+      ctx.font = '700 11.5px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const msg = isComplete
+        ? `${pic.name.toUpperCase()} RESTORED! TAP FRAME FOR NEXT`
+        : 'TAP THE FRAME TO SPEND STARS & RESTORE PICTURE!';
+      ctx.fillText(msg, banner.x + banner.w / 2, banner.y + banner.h / 2 + 1);
+
+      // Pixel-Art Frame
+      const gridSize = Math.min(W - 64, H - 280, 290);
+      const gx0 = W / 2 - gridSize / 2;
+      const gy0 = 138;
+      const cell = gridSize / pic.cols;
+
+      // Glowing orange outline border
+      ctx.save();
+      ctx.shadowColor = '#FF9F1C';
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = 'rgba(42, 20, 6, 0.72)';
+      drawRoundRect(gx0 - 8, gy0 - 8, gridSize + 16, gridSize + 16, 14);
+      ctx.fill();
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = '#FF9F1C';
+      ctx.stroke();
+      ctx.restore();
+
+      // Render Pixel Tiles
+      for (let r = 0; r < pic.rows; r++) {
+        const rowStr = pic.grid[r];
+        for (let c = 0; c < pic.cols; c++) {
+          const px = gx0 + c * cell;
+          const py = gy0 + r * cell;
+          const code = rowStr[c];
+          if (paintedSet.has(`${c},${r}`)) {
+            ctx.fillStyle = pic.palette[code] || '#FFCA3A';
+            ctx.fillRect(px, py, cell + 0.5, cell + 0.5);
+          } else {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+            ctx.fillRect(px + 1, py + 1, cell - 2, cell - 2);
+          }
+        }
+      }
+
+      // Picture Name & Progress
+      ctx.fillStyle = '#FFF5DC';
+      ctx.font = '700 16px sans-serif';
+      ctx.fillText(`${pic.name} (${Math.round((paintedSet.size / totalCells) * 100)}%)`, W / 2, gy0 + gridSize + 28);
+
+      // Big Green "LEVEL X" Play Button
+      const nextLvlBtn = { x: W / 2 - 110, y: H - 118, w: 220, h: 52 };
+      drawWoodButton(nextLvlBtn, 16, true);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '700 18px sans-serif';
+      ctx.fillText(`LEVEL ${state.levelNum + 1} ▶`, nextLvlBtn.x + nextLvlBtn.w / 2, nextLvlBtn.y + nextLvlBtn.h / 2 + 1);
+
+      // Gallery Book Switcher Icon (Bottom Right)
+      const bookBtn = { x: W - 88, y: H - 124, w: 72, h: 64 };
+      drawWoodButton(bookBtn, 14, false);
+      ctx.fillStyle = '#5C310C';
+      ctx.font = '700 22px sans-serif';
+      ctx.fillText('📖', bookBtn.x + bookBtn.w / 2, bookBtn.y + 26);
+      ctx.font = '700 9px sans-serif';
+      ctx.fillText('GALLERY', bookBtn.x + bookBtn.w / 2, bookBtn.y + 50);
+
+      // No Stars Toast
+      if (state.showNoStarsToast > 0) {
+        ctx.fillStyle = 'rgba(25, 10, 2, 0.88)';
+        drawRoundRect(W / 2 - 135, gy0 + gridSize / 2 - 24, 270, 48, 14);
+        ctx.fill();
+        ctx.fillStyle = '#FFCA3A';
+        ctx.font = '700 13px sans-serif';
+        ctx.fillText('Complete more levels to earn ⭐!', W / 2, gy0 + gridSize / 2 + 1);
+      }
+    }
+
+    function renderTopAndBottomBars() {
+      const ui = getLayoutBoxes();
+
+      // Top Wood Bar
+      drawWoodPanel(0, 0, W, ui.topH, true);
+      ctx.fillStyle = 'rgba(65, 32, 8, 0.35)';
+      ctx.fillRect(0, ui.topH - 3, W, 3);
+
+      // Settings Gear Button
+      drawWoodButton(ui.settingsBtn, 12, false);
+      ctx.fillStyle = '#5C310C';
+      ctx.font = '700 20px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('⚙', ui.settingsBtn.x + ui.settingsBtn.w / 2, ui.settingsBtn.y + ui.settingsBtn.h / 2 + 1);
+
+      // Restart Circular Arrow Button
+      drawWoodButton(ui.restartBtn, 12, false);
+      ctx.fillText('↻', ui.restartBtn.x + ui.restartBtn.w / 2, ui.restartBtn.y + ui.restartBtn.h / 2 + 1);
+
+      // Center Wooden Level Plaque + 3 Stars
+      drawWoodButton(ui.levelPlaque, 14, false);
+      ctx.fillStyle = '#4A2508';
+      ctx.font = '700 13px sans-serif';
+      ctx.fillText(`Level ${state.levelNum}`, ui.levelPlaque.x + ui.levelPlaque.w / 2, ui.levelPlaque.y + 16);
+
+      const starStartX = ui.levelPlaque.x + ui.levelPlaque.w / 2 - 28;
+      for (let s = 0; s < 3; s++) {
+        drawStar(starStartX + s * 28, ui.levelPlaque.y + 35, 8.5, true);
+      }
+
+      // Right Pill: Stars & Coins in Gallery, or RELAX Toggle in Puzzle
+      if (state.screen === 'gallery') {
+        drawWoodButton(ui.relaxBtn, 12, false);
+        ctx.fillStyle = '#4A2508';
+        ctx.font = '700 12px sans-serif';
+        ctx.fillText(`⭐ ${state.stars}`, ui.relaxBtn.x + ui.relaxBtn.w / 2, ui.relaxBtn.y + ui.relaxBtn.h / 2 + 1);
+      } else {
+        drawWoodButton(ui.relaxBtn, 12, state.relaxMode);
+        ctx.fillStyle = state.relaxMode ? '#FFFFFF' : '#4A2508';
+        ctx.font = '700 10px sans-serif';
+        ctx.fillText(state.relaxMode ? 'RELAX:ON' : 'RELAX:OFF', ui.relaxBtn.x + ui.relaxBtn.w / 2, ui.relaxBtn.y + ui.relaxBtn.h / 2 + 1);
+      }
+
+      // Bottom Wood Toolbar (Only on Puzzle Screen)
+      if (state.screen === 'puzzle') {
+        drawWoodPanel(0, H - ui.botH, W, ui.botH, true);
+        ctx.fillStyle = 'rgba(255, 240, 200, 0.35)';
+        ctx.fillRect(0, H - ui.botH, W, 2);
+
+        const icons = ['💡', '🧽', '📐', '🪄'];
+        const labels = ['HINT', 'ERASE', 'GUIDE', 'CLEAR 3'];
+        ui.tools.forEach((tool, idx) => {
+          const isActive = tool.id === 'ruler' && state.showSightlines;
+          drawWoodButton(tool, 14, isActive);
+          ctx.font = '22px sans-serif';
+          ctx.fillText(icons[idx], tool.x + tool.w / 2, tool.y + 23);
+          ctx.fillStyle = isActive ? '#FFFFFF' : '#5C310C';
+          ctx.font = '700 8.5px sans-serif';
+          ctx.fillText(labels[idx], tool.x + tool.w / 2, tool.y + 45);
+        });
+      }
+    }
+
+    function renderModalsAndParticles() {
+      // Render Sparkles & Confetti
+      for (const p of state.particles) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.translate(p.x, p.y);
+        if (p.isConfetti) {
+          ctx.rotate(p.rot);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.65);
+        } else {
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // "WONDERFUL!" Level Clear Modal (Matches Video!)
+      if (state.showWinModal) {
+        ctx.fillStyle = 'rgba(22, 12, 4, 0.58)';
+        ctx.fillRect(0, 0, W, H);
+
+        const cw = Math.min(320, W - 36);
+        const ch = 285;
+        const cx = W / 2 - cw / 2;
+        const cy = H / 2 - ch / 2;
+
+        // Cream celebration card
+        drawRoundRect(cx, cy, cw, ch, 24);
+        ctx.fillStyle = '#FFF9EC';
+        ctx.fill();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#FFCA3A';
+        ctx.stroke();
+
+        // 3 Celebration Stars above Ribbon
+        drawStar(W / 2 - 44, cy + 28, 16, state.winStarsEarned >= 1);
+        drawStar(W / 2, cy + 18, 21, state.winStarsEarned >= 2);
+        drawStar(W / 2 + 44, cy + 28, 16, state.winStarsEarned >= 3);
+
+        // Purple "WONDERFUL!" Ribbon
+        ctx.fillStyle = '#8E44AD';
+        drawRoundRect(cx - 12, cy + 52, cw + 24, 46, 12);
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#F5B041';
+        ctx.stroke();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '800 21px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('WONDERFUL!', W / 2, cy + 76);
+
+        // Earned Coins & Stars
+        ctx.fillStyle = '#B9770E';
+        ctx.font = '800 22px sans-serif';
+        ctx.fillText(`🪙 +${state.winCoinsEarned}   ⭐ +${state.winStarsEarned}`, W / 2, cy + 138);
+
+        ctx.fillStyle = '#6E4726';
+        ctx.font = '600 13px sans-serif';
+        ctx.fillText(`Level ${state.levelNum} Cleared!`, W / 2, cy + 172);
+
+        // Green CONTINUE Button
+        const contBtn = { x: W / 2 - 105, y: cy + 208, w: 210, h: 48 };
+        drawWoodButton(contBtn, 16, true);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '800 17px sans-serif';
+        ctx.fillText('CONTINUE', W / 2, contBtn.y + contBtn.h / 2 + 1);
+      }
+
+      // Settings Modal
+      if (state.showSettingsModal) {
+        ctx.fillStyle = 'rgba(22, 12, 4, 0.58)';
+        ctx.fillRect(0, 0, W, H);
+
+        const card = { x: W / 2 - 150, y: H / 2 - 135, w: 300, h: 270 };
+        drawRoundRect(card.x, card.y, card.w, card.h, 22);
+        ctx.fillStyle = '#FFF8EB';
+        ctx.fill();
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = '#B87E46';
+        ctx.stroke();
+
+        ctx.fillStyle = '#4A2508';
+        ctx.font = '800 19px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Zen & Audio Settings', W / 2, card.y + 34);
+
+        const row1 = { x: card.x + 20, y: card.y + 72, w: card.w - 40, h: 44 };
+        drawWoodButton(row1, 12, !audio.muted);
+        ctx.fillStyle = !audio.muted ? '#FFFFFF' : '#4A2508';
+        ctx.font = '700 14px sans-serif';
+        ctx.fillText(`Marimba ASMR: ${audio.muted ? 'OFF' : 'ON'}`, W / 2, row1.y + 23);
+
+        const row2 = { x: card.x + 20, y: card.y + 128, w: card.w - 40, h: 44 };
+        drawWoodButton(row2, 12, audio.ambientOn);
+        ctx.fillStyle = audio.ambientOn ? '#FFFFFF' : '#4A2508';
+        ctx.fillText(`Ambient Chimes: ${audio.ambientOn ? 'ON' : 'OFF'}`, W / 2, row2.y + 23);
+
+        const closeBtn = { x: W / 2 - 70, y: card.y + 195, w: 140, h: 44 };
+        drawWoodButton(closeBtn, 14, false);
+        ctx.fillStyle = '#4A2508';
+        ctx.fillText('DONE', W / 2, closeBtn.y + 23);
+      }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, W, H);
+
+      if (state.screen === 'gallery') {
+        renderGalleryScreen();
+      } else {
+        renderPuzzleScreen();
+      }
+
+      renderTopAndBottomBars();
+      renderModalsAndParticles();
+    }
+
+    /**
+     * =========================================================================
+     * 10. RESIZING & SYNCHRONOUS BOOTSTRAP
+     * =========================================================================
+     */
+    function resizeCanvas() {
+      DPR = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = wrapEl ? wrapEl.getBoundingClientRect() : { width: 0, height: 0 };
+      const rawW = rect.width || window.innerWidth || document.documentElement.clientWidth || 0;
+      const rawH = rect.height || window.innerHeight || document.documentElement.clientHeight || 0;
+      W = Math.max(rawW, 360);
+      H = Math.max(rawH, 560);
+      canvas.width = Math.floor(W * DPR);
+      canvas.height = Math.floor(H * DPR);
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    if ('ResizeObserver' in window && wrapEl) {
+      new ResizeObserver(() => resizeCanvas()).observe(wrapEl);
+    }
+
+    let lastTs = 0;
+    function gameLoop(ts) {
+      if (!lastTs) lastTs = ts;
+      const dt = Math.min(0.05, (ts - lastTs) / 1000);
+      lastTs = ts;
+
+      update(dt);
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function init() {
+      try {
+        resizeCanvas();
+        loadProgress();
+        loadPuzzleLevel(state.levelNum);
+        render();
+      } catch (e) {
+        // Fallback clean start if storage is restricted
+        loadPuzzleLevel(1);
+        render();
+      }
+      requestAnimationFrame(gameLoop);
+    }
+
+    init();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        resizeCanvas();
+        render();
+      });
+    }
+    window.addEventListener('load', () => {
+      resizeCanvas();
+      render();
+    });
+  </script>
+</body>
+</html>
